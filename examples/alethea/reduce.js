@@ -1,4 +1,4 @@
-import * as reducers from '../../dist/mod.js'
+import * as reducers from 'https://raw.githubusercontent.com/alethea-io/quill/main/dist/mod.js'
 
 const config = [
   {
