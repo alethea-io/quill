@@ -1,6 +1,6 @@
 import type { JsonValue } from "npm:@bufbuild/protobuf";
 import * as UtxoRpc from "npm:@utxorpc-web/cardano-spec";
-import { C } from "./lib/mod.ts";
+import { C } from "../../lib/mod.ts";
 
 enum Method {
   Apply = "apply",

@@ -1,17 +1,207 @@
+var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) => function __require() {
+  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
-// src/balance_by_address.ts
+// ../../.cache/deno/deno_esbuild/bech32@2.0.0/node_modules/bech32/dist/index.js
+var require_dist = __commonJS({
+  "../../.cache/deno/deno_esbuild/bech32@2.0.0/node_modules/bech32/dist/index.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.bech32m = exports.bech32 = void 0;
+    var ALPHABET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
+    var ALPHABET_MAP = {};
+    for (let z = 0; z < ALPHABET.length; z++) {
+      const x = ALPHABET.charAt(z);
+      ALPHABET_MAP[x] = z;
+    }
+    function polymodStep(pre) {
+      const b = pre >> 25;
+      return (pre & 33554431) << 5 ^ -(b >> 0 & 1) & 996825010 ^ -(b >> 1 & 1) & 642813549 ^ -(b >> 2 & 1) & 513874426 ^ -(b >> 3 & 1) & 1027748829 ^ -(b >> 4 & 1) & 705979059;
+    }
+    function prefixChk(prefix) {
+      let chk = 1;
+      for (let i = 0; i < prefix.length; ++i) {
+        const c = prefix.charCodeAt(i);
+        if (c < 33 || c > 126)
+          return "Invalid prefix (" + prefix + ")";
+        chk = polymodStep(chk) ^ c >> 5;
+      }
+      chk = polymodStep(chk);
+      for (let i = 0; i < prefix.length; ++i) {
+        const v = prefix.charCodeAt(i);
+        chk = polymodStep(chk) ^ v & 31;
+      }
+      return chk;
+    }
+    function convert(data, inBits, outBits, pad) {
+      let value = 0;
+      let bits = 0;
+      const maxV = (1 << outBits) - 1;
+      const result = [];
+      for (let i = 0; i < data.length; ++i) {
+        value = value << inBits | data[i];
+        bits += inBits;
+        while (bits >= outBits) {
+          bits -= outBits;
+          result.push(value >> bits & maxV);
+        }
+      }
+      if (pad) {
+        if (bits > 0) {
+          result.push(value << outBits - bits & maxV);
+        }
+      } else {
+        if (bits >= inBits)
+          return "Excess padding";
+        if (value << outBits - bits & maxV)
+          return "Non-zero padding";
+      }
+      return result;
+    }
+    function toWords(bytes) {
+      return convert(bytes, 8, 5, true);
+    }
+    function fromWordsUnsafe(words) {
+      const res = convert(words, 5, 8, false);
+      if (Array.isArray(res))
+        return res;
+    }
+    function fromWords(words) {
+      const res = convert(words, 5, 8, false);
+      if (Array.isArray(res))
+        return res;
+      throw new Error(res);
+    }
+    function getLibraryFromEncoding(encoding) {
+      let ENCODING_CONST;
+      if (encoding === "bech32") {
+        ENCODING_CONST = 1;
+      } else {
+        ENCODING_CONST = 734539939;
+      }
+      function encode2(prefix, words, LIMIT) {
+        LIMIT = LIMIT || 90;
+        if (prefix.length + 7 + words.length > LIMIT)
+          throw new TypeError("Exceeds length limit");
+        prefix = prefix.toLowerCase();
+        let chk = prefixChk(prefix);
+        if (typeof chk === "string")
+          throw new Error(chk);
+        let result = prefix + "1";
+        for (let i = 0; i < words.length; ++i) {
+          const x = words[i];
+          if (x >> 5 !== 0)
+            throw new Error("Non 5-bit word");
+          chk = polymodStep(chk) ^ x;
+          result += ALPHABET.charAt(x);
+        }
+        for (let i = 0; i < 6; ++i) {
+          chk = polymodStep(chk);
+        }
+        chk ^= ENCODING_CONST;
+        for (let i = 0; i < 6; ++i) {
+          const v = chk >> (5 - i) * 5 & 31;
+          result += ALPHABET.charAt(v);
+        }
+        return result;
+      }
+      function __decode(str, LIMIT) {
+        LIMIT = LIMIT || 90;
+        if (str.length < 8)
+          return str + " too short";
+        if (str.length > LIMIT)
+          return "Exceeds length limit";
+        const lowered = str.toLowerCase();
+        const uppered = str.toUpperCase();
+        if (str !== lowered && str !== uppered)
+          return "Mixed-case string " + str;
+        str = lowered;
+        const split = str.lastIndexOf("1");
+        if (split === -1)
+          return "No separator character for " + str;
+        if (split === 0)
+          return "Missing prefix for " + str;
+        const prefix = str.slice(0, split);
+        const wordChars = str.slice(split + 1);
+        if (wordChars.length < 6)
+          return "Data too short";
+        let chk = prefixChk(prefix);
+        if (typeof chk === "string")
+          return chk;
+        const words = [];
+        for (let i = 0; i < wordChars.length; ++i) {
+          const c = wordChars.charAt(i);
+          const v = ALPHABET_MAP[c];
+          if (v === void 0)
+            return "Unknown character " + c;
+          chk = polymodStep(chk) ^ v;
+          if (i + 6 >= wordChars.length)
+            continue;
+          words.push(v);
+        }
+        if (chk !== ENCODING_CONST)
+          return "Invalid checksum for " + str;
+        return { prefix, words };
+      }
+      function decodeUnsafe(str, LIMIT) {
+        const res = __decode(str, LIMIT);
+        if (typeof res === "object")
+          return res;
+      }
+      function decode2(str, LIMIT) {
+        const res = __decode(str, LIMIT);
+        if (typeof res === "object")
+          return res;
+        throw new Error(res);
+      }
+      return {
+        decodeUnsafe,
+        decode: decode2,
+        encode: encode2,
+        toWords,
+        fromWordsUnsafe,
+        fromWords
+      };
+    }
+    exports.bech32 = getLibraryFromEncoding("bech32");
+    exports.bech32m = getLibraryFromEncoding("bech32m");
+  }
+});
+
+// src/reducers/crdt/balance_by_address.ts
 var balance_by_address_exports = {};
 __export(balance_by_address_exports, {
   apply: () => apply,
   undo: () => undo
 });
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
 function assert(condition, msg) {
   if (!condition) {
     throw new Error(msg);
@@ -43,7 +233,7 @@ function assertFloat32(arg) {
     throw new Error("invalid float 32: " + arg);
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/enum.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/enum.js
 var enumTypeSymbol = Symbol("@bufbuild/protobuf/enum-type");
 function getEnumType(enumObject) {
   const t = enumObject[enumTypeSymbol];
@@ -97,7 +287,7 @@ function normalizeEnumValue(value) {
   return Object.assign(Object.assign({}, value), { localName: value.name });
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/message.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/message.js
 var Message = class {
   /**
    * Compare with a message of the same type.
@@ -199,7 +389,7 @@ var Message = class {
   }
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/message-type.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/message-type.js
 function makeMessageType(runtime, typeName, fields, opt) {
   var _a;
   const localName = (_a = opt === null || opt === void 0 ? void 0 : opt.localName) !== null && _a !== void 0 ? _a : typeName.substring(typeName.lastIndexOf(".") + 1);
@@ -230,7 +420,7 @@ function makeMessageType(runtime, typeName, fields, opt) {
   return type;
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/proto-runtime.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/proto-runtime.js
 function makeProtoRuntime(syntax, json, bin, util) {
   return {
     syntax,
@@ -246,7 +436,7 @@ function makeProtoRuntime(syntax, json, bin, util) {
   };
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/field.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/field.js
 var ScalarType;
 (function(ScalarType2) {
   ScalarType2[ScalarType2["DOUBLE"] = 1] = "DOUBLE";
@@ -271,7 +461,7 @@ var LongType;
   LongType2[LongType2["STRING"] = 1] = "STRING";
 })(LongType || (LongType = {}));
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/google/varint.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/google/varint.js
 function varint64read() {
   let lowBits = 0;
   let highBits = 0;
@@ -451,7 +641,7 @@ function varint32read() {
   return result >>> 0;
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js
 function makeInt64Support() {
   const dv = new DataView(new ArrayBuffer(8));
   const ok = typeof BigInt === "function" && typeof dv.getBigInt64 === "function" && typeof dv.getBigUint64 === "function" && typeof dv.setBigInt64 === "function" && typeof dv.setBigUint64 === "function" && (typeof process != "object" || typeof process.env != "object" || process.env.BUF_BIGINT_DISABLE !== "1");
@@ -543,7 +733,7 @@ function makeInt64Support() {
 }
 var protoInt64 = makeInt64Support();
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/binary-encoding.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/binary-encoding.js
 var WireType;
 (function(WireType2) {
   WireType2[WireType2["Varint"] = 0] = "Varint";
@@ -554,9 +744,9 @@ var WireType;
   WireType2[WireType2["Bit32"] = 5] = "Bit32";
 })(WireType || (WireType = {}));
 var BinaryWriter = class {
-  constructor(textEncoder) {
+  constructor(textEncoder2) {
     this.stack = [];
-    this.textEncoder = textEncoder !== null && textEncoder !== void 0 ? textEncoder : new TextEncoder();
+    this.textEncoder = textEncoder2 !== null && textEncoder2 !== void 0 ? textEncoder2 : new TextEncoder();
     this.chunks = [];
     this.buf = [];
   }
@@ -754,14 +944,14 @@ var BinaryWriter = class {
   }
 };
 var BinaryReader = class {
-  constructor(buf, textDecoder) {
+  constructor(buf, textDecoder2) {
     this.varint64 = varint64read;
     this.uint32 = varint32read;
     this.buf = buf;
     this.len = buf.length;
     this.pos = 0;
     this.view = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
-    this.textDecoder = textDecoder !== null && textDecoder !== void 0 ? textDecoder : new TextDecoder();
+    this.textDecoder = textDecoder2 !== null && textDecoder2 !== void 0 ? textDecoder2 : new TextDecoder();
   }
   /**
    * Reads a tag - field number and wire type.
@@ -906,7 +1096,7 @@ var BinaryReader = class {
   }
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-wrapper.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-wrapper.js
 function wrapField(type, value) {
   if (value instanceof Message || !type.fieldWrapper) {
     return value;
@@ -925,7 +1115,7 @@ var wktWrapperToScalarType = {
   "google.protobuf.BytesValue": ScalarType.BYTES
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/scalars.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/scalars.js
 function scalarEquals(type, a, b) {
   if (a === b) {
     return true;
@@ -1025,7 +1215,7 @@ function scalarTypeInfo(type, value) {
   return [wireType, method, isUndefined || isIntrinsicDefault];
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-common.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-common.js
 var unknownFieldsSymbol = Symbol("@bufbuild/protobuf/unknown-fields");
 var readDefaults = {
   readUnknownFields: true,
@@ -1279,7 +1469,7 @@ function writePacked(writer, type, fieldNo, value) {
   writer.join();
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-proto3.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-proto3.js
 function makeBinaryFormatProto3() {
   return Object.assign(Object.assign({}, makeBinaryFormatCommon()), { writeMessage(message, writer, options) {
     const type = message.getType();
@@ -1335,7 +1525,7 @@ function makeBinaryFormatProto3() {
   } });
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-base64.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-base64.js
 var encTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
 var decTable = [];
 for (let i = 0; i < encTable.length; i++)
@@ -1436,7 +1626,7 @@ var protoBase64 = {
   }
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-common.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-common.js
 var jsonReadDefaults = {
   ignoreUnknownFields: false
 };
@@ -1829,7 +2019,7 @@ function writeScalar2(type, value, emitIntrinsicDefault) {
   }
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-proto3.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-proto3.js
 function makeJsonFormatProto3() {
   return makeJsonFormatCommon((writeEnum2, writeScalar3) => {
     return function writeField(field, value, options) {
@@ -1893,7 +2083,7 @@ function makeJsonFormatProto3() {
   });
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/util-common.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/util-common.js
 function makeUtilCommon() {
   return {
     setEnumType,
@@ -2083,7 +2273,7 @@ function toU8Arr(input) {
   return input instanceof Uint8Array ? input : new Uint8Array(input);
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-list.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-list.js
 var InternalFieldList = class {
   constructor(fields, normalizer) {
     this._fields = fields;
@@ -2141,7 +2331,7 @@ var InternalFieldList = class {
   }
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/names.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/names.js
 function localFieldName(protoName, inOneof) {
   const name = protoCamelCase(protoName);
   if (inOneof) {
@@ -2221,7 +2411,7 @@ var safeObjectProperty = (name) => {
   return name;
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field.js
 var InternalOneofInfo = class {
   constructor(name) {
     this.kind = "oneof";
@@ -2248,7 +2438,7 @@ var InternalOneofInfo = class {
   }
 };
 
-// ../../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto3.js
+// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto3.js
 var proto3 = makeProtoRuntime("proto3", makeJsonFormatProto3(), makeBinaryFormatProto3(), Object.assign(Object.assign({}, makeUtilCommon()), {
   newFieldList(fields) {
     return new InternalFieldList(fields, normalizeFieldInfosProto3);
@@ -2308,7 +2498,7 @@ function normalizeFieldInfosProto3(fieldInfos) {
   return r;
 }
 
-// ../../../../../.cache/deno/deno_esbuild/@utxorpc-web/cardano-spec@1.0.0-alpha.0/node_modules/@utxorpc-web/cardano-spec/lib/utxorpc/cardano/v1/cardano_pb.js
+// ../../.cache/deno/deno_esbuild/@utxorpc-web/cardano-spec@1.0.0-alpha.0/node_modules/@utxorpc-web/cardano-spec/lib/utxorpc/cardano/v1/cardano_pb.js
 var RedeemerPurpose;
 (function(RedeemerPurpose2) {
   RedeemerPurpose2[RedeemerPurpose2["UNSPECIFIED"] = 0] = "UNSPECIFIED";
@@ -3729,7 +3919,331 @@ await Promise.all([
   )
 ]);
 
-// src/balance_by_address.ts
+// https://deno.land/x/base64@v0.2.1/base.ts
+function getLengths(b64) {
+  const len = b64.length;
+  let validLen = b64.indexOf("=");
+  if (validLen === -1) {
+    validLen = len;
+  }
+  const placeHoldersLen = validLen === len ? 0 : 4 - validLen % 4;
+  return [validLen, placeHoldersLen];
+}
+function init(lookup3, revLookup3, urlsafe = false) {
+  function _byteLength(validLen, placeHoldersLen) {
+    return Math.floor((validLen + placeHoldersLen) * 3 / 4 - placeHoldersLen);
+  }
+  function tripletToBase64(num) {
+    return lookup3[num >> 18 & 63] + lookup3[num >> 12 & 63] + lookup3[num >> 6 & 63] + lookup3[num & 63];
+  }
+  function encodeChunk(buf, start, end) {
+    const out = new Array((end - start) / 3);
+    for (let i = start, curTriplet = 0; i < end; i += 3) {
+      out[curTriplet++] = tripletToBase64(
+        (buf[i] << 16) + (buf[i + 1] << 8) + buf[i + 2]
+      );
+    }
+    return out.join("");
+  }
+  return {
+    // base64 is 4/3 + up to two characters of the original data
+    byteLength(b64) {
+      return _byteLength.apply(null, getLengths(b64));
+    },
+    toUint8Array(b64) {
+      const [validLen, placeHoldersLen] = getLengths(b64);
+      const buf = new Uint8Array(_byteLength(validLen, placeHoldersLen));
+      const len = placeHoldersLen ? validLen - 4 : validLen;
+      let tmp;
+      let curByte = 0;
+      let i;
+      for (i = 0; i < len; i += 4) {
+        tmp = revLookup3[b64.charCodeAt(i)] << 18 | revLookup3[b64.charCodeAt(i + 1)] << 12 | revLookup3[b64.charCodeAt(i + 2)] << 6 | revLookup3[b64.charCodeAt(i + 3)];
+        buf[curByte++] = tmp >> 16 & 255;
+        buf[curByte++] = tmp >> 8 & 255;
+        buf[curByte++] = tmp & 255;
+      }
+      if (placeHoldersLen === 2) {
+        tmp = revLookup3[b64.charCodeAt(i)] << 2 | revLookup3[b64.charCodeAt(i + 1)] >> 4;
+        buf[curByte++] = tmp & 255;
+      } else if (placeHoldersLen === 1) {
+        tmp = revLookup3[b64.charCodeAt(i)] << 10 | revLookup3[b64.charCodeAt(i + 1)] << 4 | revLookup3[b64.charCodeAt(i + 2)] >> 2;
+        buf[curByte++] = tmp >> 8 & 255;
+        buf[curByte++] = tmp & 255;
+      }
+      return buf;
+    },
+    fromUint8Array(buf) {
+      const maxChunkLength = 16383;
+      const len = buf.length;
+      const extraBytes = len % 3;
+      const len2 = len - extraBytes;
+      const parts = new Array(
+        Math.ceil(len2 / maxChunkLength) + (extraBytes ? 1 : 0)
+      );
+      let curChunk = 0;
+      let chunkEnd;
+      for (let i = 0; i < len2; i += maxChunkLength) {
+        chunkEnd = i + maxChunkLength;
+        parts[curChunk++] = encodeChunk(
+          buf,
+          i,
+          chunkEnd > len2 ? len2 : chunkEnd
+        );
+      }
+      let tmp;
+      if (extraBytes === 1) {
+        tmp = buf[len2];
+        parts[curChunk] = lookup3[tmp >> 2] + lookup3[tmp << 4 & 63];
+        if (!urlsafe)
+          parts[curChunk] += "==";
+      } else if (extraBytes === 2) {
+        tmp = buf[len2] << 8 | buf[len2 + 1] & 255;
+        parts[curChunk] = lookup3[tmp >> 10] + lookup3[tmp >> 4 & 63] + lookup3[tmp << 2 & 63];
+        if (!urlsafe)
+          parts[curChunk] += "=";
+      }
+      return parts.join("");
+    }
+  };
+}
+
+// https://deno.land/x/base64@v0.2.1/mod.ts
+var lookup = [];
+var revLookup = [];
+var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+for (let i = 0, l = code.length; i < l; ++i) {
+  lookup[i] = code[i];
+  revLookup[code.charCodeAt(i)] = i;
+}
+revLookup["-".charCodeAt(0)] = 62;
+revLookup["_".charCodeAt(0)] = 63;
+var { byteLength, toUint8Array, fromUint8Array } = init(
+  lookup,
+  revLookup
+);
+
+// https://deno.land/x/base64@v0.2.1/base64url.ts
+var lookup2 = [];
+var revLookup2 = [];
+var code2 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+for (let i = 0, l = code2.length; i < l; ++i) {
+  lookup2[i] = code2[i];
+  revLookup2[code2.charCodeAt(i)] = i;
+}
+var { byteLength: byteLength2, toUint8Array: toUint8Array2, fromUint8Array: fromUint8Array2 } = init(
+  lookup2,
+  revLookup2,
+  true
+);
+
+// https://denopkg.com/chiefbiiko/std-encoding@master/mod.ts
+var decoder = new TextDecoder();
+var encoder = new TextEncoder();
+function toHexString(buf) {
+  return buf.reduce(
+    (hex, byte) => `${hex}${byte < 16 ? "0" : ""}${byte.toString(16)}`,
+    ""
+  );
+}
+function fromHexString(hex) {
+  const len = hex.length;
+  if (len % 2 || !/^[0-9a-fA-F]+$/.test(hex)) {
+    throw new TypeError("Invalid hex string.");
+  }
+  hex = hex.toLowerCase();
+  const buf = new Uint8Array(Math.floor(len / 2));
+  const end = len / 2;
+  for (let i = 0; i < end; ++i) {
+    buf[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return buf;
+}
+function decode(buf, encoding = "utf8") {
+  if (/^utf-?8$/i.test(encoding)) {
+    return decoder.decode(buf);
+  } else if (/^base64$/i.test(encoding)) {
+    return fromUint8Array(buf);
+  } else if (/^base64url$/i.test(encoding)) {
+    return fromUint8Array2(buf);
+  } else if (/^hex(?:adecimal)?$/i.test(encoding)) {
+    return toHexString(buf);
+  } else {
+    throw new TypeError("Unsupported string encoding.");
+  }
+}
+function encode(str, encoding = "utf8") {
+  if (/^utf-?8$/i.test(encoding)) {
+    return encoder.encode(str);
+  } else if (/^base64(?:url)?$/i.test(encoding)) {
+    return toUint8Array(str);
+  } else if (/^hex(?:adecimal)?$/i.test(encoding)) {
+    return fromHexString(str);
+  } else {
+    throw new TypeError("Unsupported string encoding.");
+  }
+}
+
+// https://deno.land/x/blake2b@v0.1.0/loadWasm.ts
+function loadWasm() {
+  const mod = {};
+  mod.buffer = toUint8Array(
+    "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"
+  );
+  mod.exports = new WebAssembly.Instance(
+    new WebAssembly.Module(mod.buffer)
+  ).exports;
+  mod.memory = new Uint8Array(mod.exports.memory.buffer);
+  mod.realloc = (size) => {
+    const pages = Math.ceil(Math.abs(size - mod.memory.length) / 65536);
+    mod.exports.memory.grow(pages);
+    mod.memory = new Uint8Array(mod.exports.memory.buffer);
+  };
+  return mod;
+}
+
+// https://deno.land/x/blake2b@v0.1.0/mod.ts
+function assert2(sth) {
+  if (!sth) {
+    throw new Error("sth is falsy");
+  }
+}
+var BYTES_MIN = 1;
+var BYTES_MAX = 64;
+var INPUTBYTES_MAX = 2n ** 128n - 1n;
+var KEYBYTES_MAX = 64;
+var SALTBYTES = 16;
+var PERSONALBYTES = 16;
+var _Blake2b = class {
+  /**
+   * Creates a new Blake2b instance computing the BLAKE2b checksum with a custom
+   * length. Providing a key turns the hash into a MAC. The key must be between
+   *  zero and 64 bytes long. The digest size can be a value between 1 and 64 but
+   * it is highly recommended to use values equal or greater than:
+   *   - 32 if BLAKE2b is used as a hash function (key is zero bytes long).
+   *   - 16 if BLAKE2b is used as a MAC function (key is at least 16 bytes long).
+   * @constructor
+   * @param {number} bytes - Digest length. Must be inbetween
+   *   Blake2b.BYTES_MIN and Blake2b.BYTES_MAX.
+   * @param {Uint8Array} [key] - Key length must be inbetween
+   *  Blake2b.KEYBYTES_MIN and Blake2b.KEYBYTES_MAX
+   * @param {Uint8Array} [salt] - Must be Blake2b.SALTBYTES long.
+   * @param {Uint8Array} [personal] - Must be Blake2b.PERSONALBYTES long.
+   */
+  constructor(bytes, key, salt, personal, inputEncoding) {
+    assert2(bytes >= BYTES_MIN);
+    assert2(bytes <= BYTES_MAX);
+    if (key) {
+      if (typeof key === "string") {
+        key = encode(key, inputEncoding);
+      }
+      assert2(key.byteLength <= KEYBYTES_MAX);
+    }
+    if (salt) {
+      if (typeof salt === "string") {
+        salt = encode(salt, inputEncoding);
+      }
+      assert2(salt.byteLength === SALTBYTES);
+    }
+    if (personal) {
+      if (typeof personal === "string") {
+        personal = encode(personal, inputEncoding);
+      }
+      assert2(personal.byteLength === PERSONALBYTES);
+    }
+    if (!_Blake2b.freeList.length) {
+      _Blake2b.freeList.push(_Blake2b.head);
+      _Blake2b.head += 216;
+    }
+    this.bytes = bytes;
+    this.finalized = false;
+    this.pointer = _Blake2b.freeList.pop() ?? 0;
+    _Blake2b.wasm.memory.fill(0, 0, 64);
+    _Blake2b.wasm.memory[0] = this.bytes;
+    _Blake2b.wasm.memory[1] = key ? key.length : 0;
+    _Blake2b.wasm.memory[2] = 1;
+    _Blake2b.wasm.memory[3] = 1;
+    if (salt) {
+      _Blake2b.wasm.memory.set(salt, 32);
+    }
+    if (personal) {
+      _Blake2b.wasm.memory.set(personal, 48);
+    }
+    if (this.pointer + 216 > _Blake2b.wasm.memory.byteLength) {
+      _Blake2b.wasm.realloc(this.pointer + 216);
+    }
+    _Blake2b.wasm.exports.blake2b_init(this.pointer, this.bytes);
+    if (key) {
+      this.update(key);
+      _Blake2b.wasm.memory.fill(0, _Blake2b.head, _Blake2b.head + key.length);
+      _Blake2b.wasm.memory[this.pointer + 200] = 128;
+    }
+  }
+  /** Updates the hash with additional data. */
+  update(input, inputEncoding) {
+    if (typeof input === "string") {
+      input = encode(input, inputEncoding);
+    }
+    if (_Blake2b.head + input.byteLength > _Blake2b.wasm.memory.byteLength) {
+      _Blake2b.wasm.realloc(_Blake2b.head + input.byteLength);
+    }
+    _Blake2b.wasm.memory.set(input, _Blake2b.head);
+    _Blake2b.wasm.exports.blake2b_update(
+      this.pointer,
+      _Blake2b.head,
+      _Blake2b.head + input.byteLength
+    );
+    return this;
+  }
+  /** Obtains a digest of all fed-in data. */
+  digest(outputEncoding) {
+    assert2(!this.finalized);
+    const out = new Uint8Array(this.bytes);
+    _Blake2b.freeList.push(this.pointer);
+    _Blake2b.wasm.exports.blake2b_final(this.pointer);
+    this.finalized = true;
+    for (let i = 0; i < this.bytes; i++) {
+      out[i] = _Blake2b.wasm.memory[this.pointer + 128 + i];
+    }
+    return outputEncoding ? decode(out, outputEncoding) : out;
+  }
+};
+var Blake2b = _Blake2b;
+Blake2b.wasm = loadWasm();
+Blake2b.freeList = [];
+Blake2b.head = 64;
+Blake2b.WASM = _Blake2b.wasm.buffer;
+function blake2b(msg, inputEncoding, outputEncoding, bytes = BYTES_MAX, key, salt, personal) {
+  return new Blake2b(bytes, key, salt, personal).update(msg, inputEncoding).digest(outputEncoding);
+}
+
+// src/lib/utils.ts
+var import_npm_bech32 = __toESM(require_dist());
+var BYRON_UNIX = 1506203091;
+var SHELLY_UNIX = 1596491091;
+var SHELLY_SLOT = 4924800;
+function slotToTimestamp(slotNumber) {
+  let unixTimestamp;
+  if (slotNumber <= SHELLY_SLOT) {
+    unixTimestamp = BYRON_UNIX + slotNumber * 20;
+  } else {
+    unixTimestamp = SHELLY_UNIX + (slotNumber - SHELLY_SLOT);
+  }
+  const date = new Date(unixTimestamp * 1e3);
+  return date.toISOString();
+}
+function assetFingerprint(policy, name) {
+  const hash = blake2b(
+    new Uint8Array([...policy, ...name]),
+    void 0,
+    void 0,
+    20
+  );
+  const words = import_npm_bech32.bech32.toWords(hash);
+  return import_npm_bech32.bech32.encode("asset", words);
+}
+
+// src/reducers/crdt/balance_by_address.ts
 function processTxOutput(txOuput, addressType, action) {
   const address = C.Address.from_bytes(txOuput.address);
   let key;
@@ -3835,30 +4349,460 @@ function undo(blockJson, config) {
   return processBlock(blockJson, config, "undo" /* Undo */);
 }
 
+// src/reducers/sql/address_state/address_state.ts
+var address_state_exports = {};
+__export(address_state_exports, {
+  apply: () => apply2,
+  undo: () => undo2
+});
+
+// https://deno.land/std@0.209.0/encoding/_util.ts
+var encoder2 = new TextEncoder();
+function getTypeName(value) {
+  const type = typeof value;
+  if (type !== "object") {
+    return type;
+  } else if (value === null) {
+    return "null";
+  } else {
+    return value?.constructor?.name ?? "object";
+  }
+}
+function validateBinaryLike(source) {
+  if (typeof source === "string") {
+    return encoder2.encode(source);
+  } else if (source instanceof Uint8Array) {
+    return source;
+  } else if (source instanceof ArrayBuffer) {
+    return new Uint8Array(source);
+  }
+  throw new TypeError(
+    `The input must be a Uint8Array, a string, or an ArrayBuffer. Received a value of the type ${getTypeName(source)}.`
+  );
+}
+
+// https://deno.land/std@0.209.0/encoding/hex.ts
+var hexTable = new TextEncoder().encode("0123456789abcdef");
+var textEncoder = new TextEncoder();
+var textDecoder = new TextDecoder();
+function encodeHex(src) {
+  const u8 = validateBinaryLike(src);
+  const dst = new Uint8Array(u8.length * 2);
+  for (let i = 0; i < dst.length; i++) {
+    const v = u8[i];
+    dst[i * 2] = hexTable[v >> 4];
+    dst[i * 2 + 1] = hexTable[v & 15];
+  }
+  return textDecoder.decode(dst);
+}
+
+// src/reducers/sql/address_state/address_state.ts
+function processTxOutput2(txOutput, addressType, action) {
+  const address = C.Address.from_bytes(txOutput.address);
+  let bech322;
+  let raw;
+  switch (addressType) {
+    case "payment":
+      if (address.as_byron()) {
+        bech322 = address.as_byron()?.to_base58();
+      } else if (address.to_bech32(void 0)) {
+        bech322 = address.to_bech32(void 0);
+      } else {
+        throw new Error(
+          `address "${encodeHex(txOutput.address)}" could not be parsed!`
+        );
+      }
+      raw = txOutput.address;
+      break;
+    case "stake":
+      if (address.as_base()) {
+        const network_id = address.network_id();
+        const stake_cred = address.as_base()?.stake_cred();
+        const stake_address = C.RewardAddress.new(network_id, stake_cred).to_address();
+        bech322 = stake_address.to_bech32(void 0);
+        raw = stake_address.to_bytes();
+      } else {
+        return null;
+      }
+      break;
+    default:
+      throw new Error(`address type "${addressType}" not implemented`);
+  }
+  let amount;
+  let count;
+  switch (action) {
+    case "consume" /* Consume */:
+      amount = -txOutput.coin;
+      count = -1n;
+      break;
+    case "produce" /* Produce */:
+      amount = txOutput.coin;
+      count = 1n;
+      break;
+  }
+  return { bech32: bech322, raw, amount, count };
+}
+function updateAddressState(txo, addressState) {
+  const existingState = addressState.get(txo.bech32);
+  if (existingState) {
+    existingState.balance += txo.amount;
+    existingState.utxo_count += txo.count;
+    addressState.set(txo.bech32, existingState);
+  } else {
+    addressState.set(txo.bech32, {
+      bech32: txo.bech32,
+      raw: txo.raw,
+      balance: txo.amount,
+      tx_count: 0n,
+      tx_count_as_source: 0n,
+      tx_count_as_dest: 0n,
+      utxo_count: txo.count
+    });
+  }
+}
+function processBlock2(blockJson, config, method) {
+  const block = Block.fromJson(blockJson);
+  const blockTime = slotToTimestamp(Number(block.header?.slot));
+  const addressType = config.addressType;
+  const table = config.table;
+  const addressState = /* @__PURE__ */ new Map();
+  for (const tx of block.body?.tx ?? []) {
+    const sourceAddresses = /* @__PURE__ */ new Set();
+    const destAddresses = /* @__PURE__ */ new Set();
+    for (const txOutput of tx.outputs) {
+      const action = method === "apply" /* Apply */ ? "produce" /* Produce */ : "consume" /* Consume */;
+      const txo = processTxOutput2(txOutput, addressType, action);
+      if (txo) {
+        updateAddressState(txo, addressState);
+        destAddresses.add(txo.bech32);
+      }
+    }
+    for (const txInput of tx.inputs) {
+      const action = method === "apply" /* Apply */ ? "consume" /* Consume */ : "produce" /* Produce */;
+      const txOutput = txInput.asOutput;
+      const txo = txOutput ? processTxOutput2(txOutput, addressType, action) : null;
+      if (txo) {
+        updateAddressState(txo, addressState);
+        sourceAddresses.add(txo.bech32);
+      }
+    }
+    (/* @__PURE__ */ new Set([...sourceAddresses, ...destAddresses])).forEach((bech322) => {
+      const state = addressState.get(bech322);
+      if (state) {
+        state.tx_count += method === "apply" /* Apply */ ? 1n : -1n;
+        addressState.set(bech322, state);
+      }
+    });
+    sourceAddresses.forEach((bech322) => {
+      const state = addressState.get(bech322);
+      if (state) {
+        state.tx_count_as_source += method === "apply" /* Apply */ ? 1n : -1n;
+        addressState.set(bech322, state);
+      }
+    });
+    destAddresses.forEach((bech322) => {
+      const state = addressState.get(bech322);
+      if (state) {
+        state.tx_count_as_dest += method === "apply" /* Apply */ ? 1n : -1n;
+        addressState.set(bech322, state);
+      }
+    });
+  }
+  const keys = Array.from(addressState.keys());
+  const values = Array.from(addressState.values());
+  if (keys.length > 0) {
+    const addresses = keys.map((key) => `'${key}'`).join(",");
+    const addressesRaw = values.map(
+      (value) => `decode('${encodeHex(value.raw)}', 'hex')`
+    ).join(",");
+    const balances = values.map((value) => `${value.balance}`).join(",");
+    const txCounts = values.map((value) => `${value.tx_count}`).join(",");
+    const sourceCounts = values.map((value) => `${value.tx_count_as_source}`).join(",");
+    const destCounts = values.map((value) => `${value.tx_count_as_dest}`).join(
+      ","
+    );
+    const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
+    const inserted = `
+      INSERT INTO scrolls.${table} (
+        bech32,
+        raw,
+        balance,
+        utxo_count,
+        tx_count,
+        tx_count_as_source,
+        tx_count_as_dest,
+        first_tx_time,
+        last_tx_time
+      )
+      SELECT unnest(ARRAY[${addresses}]) AS bech32,
+              unnest(ARRAY[${addressesRaw}]) AS raw,
+              unnest(ARRAY[${balances}]) AS balance,
+              unnest(ARRAY[${utxoCounts}]) AS utxo_count,
+              unnest(ARRAY[${txCounts}]) AS tx_count,
+              unnest(ARRAY[${sourceCounts}]) AS tx_count_as_source,
+              unnest(ARRAY[${destCounts}]) AS tx_count_as_dest,
+              '${blockTime}'::timestamptz AS first_tx_time,
+              '${blockTime}'::timestamptz AS last_tx_time
+      ON CONFLICT (bech32) DO UPDATE
+      SET balance = ${table}.balance + EXCLUDED.balance,
+          utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
+          tx_count = ${table}.tx_count + EXCLUDED.tx_count,
+          tx_count_as_source = ${table}.tx_count_as_source + EXCLUDED.tx_count_as_source,
+          tx_count_as_dest = ${table}.tx_count_as_dest + EXCLUDED.tx_count_as_dest,
+          last_tx_time = EXCLUDED.last_tx_time
+    `;
+    const deleted = `
+      DELETE FROM scrolls.${table}
+      WHERE bech32 IN (${addresses})
+        AND tx_count = 0
+    `;
+    return [inserted, deleted];
+  } else {
+    return [];
+  }
+}
+function apply2(blockJson, config) {
+  return processBlock2(blockJson, config, "apply" /* Apply */);
+}
+function undo2(blockJson, config) {
+  return processBlock2(blockJson, config, "undo" /* Undo */);
+}
+
+// src/reducers/sql/address_token_state/address_token_state.ts
+var address_token_state_exports = {};
+__export(address_token_state_exports, {
+  apply: () => apply3,
+  undo: () => undo3
+});
+function processBlock3(blockJson, config, method) {
+  return [];
+}
+function apply3(blockJson, config) {
+  return processBlock3(blockJson, config, "apply" /* Apply */);
+}
+function undo3(blockJson, config) {
+  return processBlock3(blockJson, config, "undo" /* Undo */);
+}
+
+// src/reducers/sql/token_state/token_state.ts
+var token_state_exports = {};
+__export(token_state_exports, {
+  apply: () => apply4,
+  undo: () => undo4
+});
+function processMint(mint, method, tokenState) {
+  for (const asset of mint.assets) {
+    const fingerprint = assetFingerprint(mint.policyId, asset.name);
+    const existingState = tokenState.get(fingerprint);
+    if (existingState) {
+      existingState.supply += method === "apply" /* Apply */ ? asset.mintCoin : -asset.mintCoin;
+      tokenState.set(fingerprint, existingState);
+    } else {
+      tokenState.set(fingerprint, {
+        fingerprint,
+        policy: mint.policyId,
+        name: asset.name,
+        supply: asset.mintCoin,
+        utxo_count: 0n,
+        tx_count: 0n,
+        transfer_count: 0n
+      });
+    }
+  }
+}
+function processTxOutput3(txOutput, action, tokenState, addresses) {
+  const address = C.Address.from_bytes(txOutput.address);
+  let bech322;
+  if (address.as_byron()) {
+    bech322 = address.as_byron()?.to_base58();
+  } else if (address.as_base()) {
+    const network_id = address.network_id();
+    const stake_cred = address.as_base()?.stake_cred();
+    if (stake_cred) {
+      const stake_address = C.RewardAddress.new(network_id, stake_cred).to_address();
+      bech322 = stake_address.to_bech32(void 0);
+    } else {
+      bech322 = address.to_bech32(void 0);
+    }
+  } else {
+    throw new Error(
+      `address "${encodeHex(txOutput.address)}" could not be parsed!`
+    );
+  }
+  let fingerprint;
+  for (const multiasset of txOutput.assets ?? []) {
+    for (const asset of multiasset.assets) {
+      fingerprint = assetFingerprint(multiasset.policyId, asset.name);
+      const existingSet = addresses.get(fingerprint);
+      if (existingSet) {
+        existingSet.add(bech322);
+        addresses.set(fingerprint, existingSet);
+      } else {
+        addresses.set(fingerprint, new Set(bech322));
+      }
+      const utxo_count = action === "produce" /* Produce */ ? 1n : -1n;
+      const existingState = tokenState.get(fingerprint);
+      if (existingState) {
+        existingState.utxo_count += utxo_count;
+        tokenState.set(fingerprint, existingState);
+      } else {
+        tokenState.set(fingerprint, {
+          fingerprint,
+          policy: multiasset.policyId,
+          name: asset.name,
+          supply: 0n,
+          utxo_count,
+          tx_count: 0n,
+          transfer_count: 0n
+        });
+      }
+    }
+  }
+}
+function processBlock4(blockJson, config, method) {
+  const block = Block.fromJson(blockJson);
+  const table = config.table;
+  const tokenState = /* @__PURE__ */ new Map();
+  for (const tx of block.body?.tx ?? []) {
+    for (const mint of tx.mint ?? []) {
+      processMint(mint, method, tokenState);
+    }
+    const sourceAddresses = /* @__PURE__ */ new Map();
+    const destAddresses = /* @__PURE__ */ new Map();
+    for (const txOutput of tx.outputs) {
+      const action = method === "apply" /* Apply */ ? "produce" /* Produce */ : "consume" /* Consume */;
+      processTxOutput3(txOutput, action, tokenState, destAddresses);
+    }
+    for (const txInput of tx.inputs) {
+      const action = method === "apply" /* Apply */ ? "consume" /* Consume */ : "produce" /* Produce */;
+      const txOutput = txInput.asOutput;
+      if (txOutput) {
+        processTxOutput3(txOutput, action, tokenState, sourceAddresses);
+      }
+    }
+    const addresses = /* @__PURE__ */ new Map();
+    const mergeSets = (set1, set2) => {
+      return /* @__PURE__ */ new Set([...set1, ...set2]);
+    };
+    for (const [key, value] of sourceAddresses) {
+      addresses.set(key, new Set(value));
+    }
+    for (const [key, value] of destAddresses) {
+      if (addresses.has(key)) {
+        addresses.set(key, mergeSets(addresses.get(key), value));
+      } else {
+        addresses.set(key, new Set(value));
+      }
+    }
+    for (const [fingerprint, address_set] of addresses) {
+    }
+  }
+  const keys = Array.from(tokenState.keys());
+  const values = Array.from(tokenState.values());
+  if (keys.length > 0) {
+    const fingerprints = keys.map((key) => `'${key}'`).join(",");
+    const policies = values.map(
+      (value) => `decode('${encodeHex(value.policy)}', 'hex')`
+    ).join(",");
+    const names = values.map(
+      (value) => `decode('${encodeHex(value.name)}', 'hex')`
+    ).join(",");
+    const supplies = values.map((value) => `${value.supply}`).join(",");
+    const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
+    const txCounts = values.map((value) => `${value.tx_count}`).join(",");
+    const transferCounts = values.map((value) => `${value.transfer_count}`).join(",");
+    const inserted = `
+      INSERT INTO scrolls.${table} (
+        fingerprint,
+        policy,
+        name,
+        supply,
+        utxo_count,
+        tx_count,
+        transfer_count
+      )
+      SELECT unnest(ARRAY[${fingerprints}]) AS fingerprint,
+              unnest(ARRAY[${policies}]) AS policy,
+              unnest(ARRAY[${names}]) AS name,
+              unnest(ARRAY[${supplies}]) AS supply,
+              unnest(ARRAY[${utxoCounts}]) AS utxo_count,
+              unnest(ARRAY[${txCounts}]) AS tx_count,
+              unnest(ARRAY[${transferCounts}]) AS transfer_count
+      ON CONFLICT (fingerprint) DO UPDATE
+      SET supply = ${table}.supply + EXCLUDED.supply,
+          utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
+          tx_count = ${table}.tx_count + EXCLUDED.tx_count,
+          transfer_count = ${table}.transfer_count + EXCLUDED.transfer_count
+    `;
+    const deleted = `
+      DELETE FROM scrolls.${table}
+      WHERE fingerprint IN (${fingerprints})
+        AND tx_count = 0
+    `;
+    return [inserted, deleted];
+  } else {
+    return [];
+  }
+}
+function apply4(blockJson, config) {
+  return processBlock4(blockJson, config, "apply" /* Apply */);
+}
+function undo4(blockJson, config) {
+  return processBlock4(blockJson, config, "undo" /* Undo */);
+}
+
 // src/mod.ts
-var modules = {
+var _CRDT = class {
+  static apply(blockJson, reducers) {
+    return reducers.flatMap(({ name, config }) => {
+      const module = _CRDT.modules[name];
+      if (module) {
+        return module.apply(blockJson, config);
+      }
+      throw new Error(`CRDT module with name ${name} does not exist.`);
+    });
+  }
+  static undo(blockJson, reducers) {
+    return reducers.flatMap(({ name, config }) => {
+      const module = _CRDT.modules[name];
+      if (module) {
+        return module.undo(blockJson, config);
+      }
+      throw new Error(`CRDT module with name ${name} does not exist.`);
+    });
+  }
+};
+var CRDT = _CRDT;
+CRDT.modules = {
   "BalanceByAddress": balance_by_address_exports
 };
-function isKeyOfModules(key) {
-  return key in modules;
-}
-function apply2(blockJson, reducers) {
-  return reducers.flatMap(({ name, config }) => {
-    if (isKeyOfModules(name)) {
-      return modules[name].apply(blockJson, config);
-    }
-    throw new Error(`Module with name ${name} does not exist.`);
-  });
-}
-function undo2(blockJson, reducers) {
-  return reducers.flatMap(({ name, config }) => {
-    if (isKeyOfModules(name)) {
-      return modules[name].undo(blockJson, config);
-    }
-    throw new Error(`Module with name ${name} does not exist.`);
-  });
-}
+var _SQL = class {
+  static apply(blockJson, reducers) {
+    return reducers.flatMap(({ name, config }) => {
+      const module = _SQL.modules[name];
+      if (module) {
+        return module.apply(blockJson, config);
+      }
+      throw new Error(`SQL module with name ${name} does not exist.`);
+    });
+  }
+  static undo(blockJson, reducers) {
+    return reducers.flatMap(({ name, config }) => {
+      const module = _SQL.modules[name];
+      if (module) {
+        return module.undo(blockJson, config);
+      }
+      throw new Error(`SQL module with name ${name} does not exist.`);
+    });
+  }
+};
+var SQL = _SQL;
+SQL.modules = {
+  "AddressState": address_state_exports,
+  "AddressTokenState": address_token_state_exports,
+  "TokenState": token_state_exports
+};
 export {
-  apply2 as apply,
-  undo2 as undo
+  CRDT,
+  SQL
 };
