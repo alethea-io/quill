@@ -4213,9 +4213,6 @@ Blake2b.wasm = loadWasm();
 Blake2b.freeList = [];
 Blake2b.head = 64;
 Blake2b.WASM = _Blake2b.wasm.buffer;
-function blake2b(msg, inputEncoding, outputEncoding, bytes = BYTES_MAX, key, salt, personal) {
-  return new Blake2b(bytes, key, salt, personal).update(msg, inputEncoding).digest(outputEncoding);
-}
 
 // src/lib/utils.ts
 var import_npm_bech32 = __toESM(require_dist());
@@ -4231,16 +4228,6 @@ function slotToTimestamp(slotNumber) {
   }
   const date = new Date(unixTimestamp * 1e3);
   return date.toISOString();
-}
-function assetFingerprint(policy, name) {
-  const hash = blake2b(
-    new Uint8Array([...policy, ...name]),
-    void 0,
-    void 0,
-    20
-  );
-  const words = import_npm_bech32.bech32.toWords(hash);
-  return import_npm_bech32.bech32.encode("asset", words);
 }
 
 // src/reducers/crdt/balance_by_address.ts
@@ -4584,173 +4571,6 @@ function undo3(blockJson, config) {
   return processBlock3(blockJson, config, "undo" /* Undo */);
 }
 
-// src/reducers/sql/token_state/token_state.ts
-var token_state_exports = {};
-__export(token_state_exports, {
-  apply: () => apply4,
-  undo: () => undo4
-});
-function processMint(mint, method, tokenState) {
-  for (const asset of mint.assets) {
-    const fingerprint = assetFingerprint(mint.policyId, asset.name);
-    const existingState = tokenState.get(fingerprint);
-    if (existingState) {
-      existingState.supply += method === "apply" /* Apply */ ? asset.mintCoin : -asset.mintCoin;
-      tokenState.set(fingerprint, existingState);
-    } else {
-      tokenState.set(fingerprint, {
-        fingerprint,
-        policy: mint.policyId,
-        name: asset.name,
-        supply: asset.mintCoin,
-        utxo_count: 0n,
-        tx_count: 0n,
-        transfer_count: 0n
-      });
-    }
-  }
-}
-function processTxOutput3(txOutput, action, tokenState, addresses) {
-  const address = C.Address.from_bytes(txOutput.address);
-  let bech322;
-  if (address.as_byron()) {
-    bech322 = address.as_byron()?.to_base58();
-  } else if (address.as_base()) {
-    const network_id = address.network_id();
-    const stake_cred = address.as_base()?.stake_cred();
-    if (stake_cred) {
-      const stake_address = C.RewardAddress.new(network_id, stake_cred).to_address();
-      bech322 = stake_address.to_bech32(void 0);
-    } else {
-      bech322 = address.to_bech32(void 0);
-    }
-  } else {
-    throw new Error(
-      `address "${encodeHex(txOutput.address)}" could not be parsed!`
-    );
-  }
-  let fingerprint;
-  for (const multiasset of txOutput.assets ?? []) {
-    for (const asset of multiasset.assets) {
-      fingerprint = assetFingerprint(multiasset.policyId, asset.name);
-      const existingSet = addresses.get(fingerprint);
-      if (existingSet) {
-        existingSet.add(bech322);
-        addresses.set(fingerprint, existingSet);
-      } else {
-        addresses.set(fingerprint, new Set(bech322));
-      }
-      const utxo_count = action === "produce" /* Produce */ ? 1n : -1n;
-      const existingState = tokenState.get(fingerprint);
-      if (existingState) {
-        existingState.utxo_count += utxo_count;
-        tokenState.set(fingerprint, existingState);
-      } else {
-        tokenState.set(fingerprint, {
-          fingerprint,
-          policy: multiasset.policyId,
-          name: asset.name,
-          supply: 0n,
-          utxo_count,
-          tx_count: 0n,
-          transfer_count: 0n
-        });
-      }
-    }
-  }
-}
-function processBlock4(blockJson, config, method) {
-  const block = Block.fromJson(blockJson);
-  const table = config.table;
-  const tokenState = /* @__PURE__ */ new Map();
-  for (const tx of block.body?.tx ?? []) {
-    for (const mint of tx.mint ?? []) {
-      processMint(mint, method, tokenState);
-    }
-    const sourceAddresses = /* @__PURE__ */ new Map();
-    const destAddresses = /* @__PURE__ */ new Map();
-    for (const txOutput of tx.outputs) {
-      const action = method === "apply" /* Apply */ ? "produce" /* Produce */ : "consume" /* Consume */;
-      processTxOutput3(txOutput, action, tokenState, destAddresses);
-    }
-    for (const txInput of tx.inputs) {
-      const action = method === "apply" /* Apply */ ? "consume" /* Consume */ : "produce" /* Produce */;
-      const txOutput = txInput.asOutput;
-      if (txOutput) {
-        processTxOutput3(txOutput, action, tokenState, sourceAddresses);
-      }
-    }
-    const addresses = /* @__PURE__ */ new Map();
-    const mergeSets = (set1, set2) => {
-      return /* @__PURE__ */ new Set([...set1, ...set2]);
-    };
-    for (const [key, value] of sourceAddresses) {
-      addresses.set(key, new Set(value));
-    }
-    for (const [key, value] of destAddresses) {
-      if (addresses.has(key)) {
-        addresses.set(key, mergeSets(addresses.get(key), value));
-      } else {
-        addresses.set(key, new Set(value));
-      }
-    }
-    for (const [fingerprint, address_set] of addresses) {
-    }
-  }
-  const keys = Array.from(tokenState.keys());
-  const values = Array.from(tokenState.values());
-  if (keys.length > 0) {
-    const fingerprints = keys.map((key) => `'${key}'`).join(",");
-    const policies = values.map(
-      (value) => `decode('${encodeHex(value.policy)}', 'hex')`
-    ).join(",");
-    const names = values.map(
-      (value) => `decode('${encodeHex(value.name)}', 'hex')`
-    ).join(",");
-    const supplies = values.map((value) => `${value.supply}`).join(",");
-    const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
-    const txCounts = values.map((value) => `${value.tx_count}`).join(",");
-    const transferCounts = values.map((value) => `${value.transfer_count}`).join(",");
-    const inserted = `
-      INSERT INTO scrolls.${table} (
-        fingerprint,
-        policy,
-        name,
-        supply,
-        utxo_count,
-        tx_count,
-        transfer_count
-      )
-      SELECT unnest(ARRAY[${fingerprints}]) AS fingerprint,
-              unnest(ARRAY[${policies}]) AS policy,
-              unnest(ARRAY[${names}]) AS name,
-              unnest(ARRAY[${supplies}]) AS supply,
-              unnest(ARRAY[${utxoCounts}]) AS utxo_count,
-              unnest(ARRAY[${txCounts}]) AS tx_count,
-              unnest(ARRAY[${transferCounts}]) AS transfer_count
-      ON CONFLICT (fingerprint) DO UPDATE
-      SET supply = ${table}.supply + EXCLUDED.supply,
-          utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
-          tx_count = ${table}.tx_count + EXCLUDED.tx_count,
-          transfer_count = ${table}.transfer_count + EXCLUDED.transfer_count
-    `;
-    const deleted = `
-      DELETE FROM scrolls.${table}
-      WHERE fingerprint IN (${fingerprints})
-        AND tx_count = 0
-    `;
-    return [inserted, deleted];
-  } else {
-    return [];
-  }
-}
-function apply4(blockJson, config) {
-  return processBlock4(blockJson, config, "apply" /* Apply */);
-}
-function undo4(blockJson, config) {
-  return processBlock4(blockJson, config, "undo" /* Undo */);
-}
-
 // src/mod.ts
 var _CRDT = class {
   static apply(blockJson, reducers) {
@@ -4799,8 +4619,8 @@ var _SQL = class {
 var SQL = _SQL;
 SQL.modules = {
   "AddressState": address_state_exports,
-  "AddressTokenState": address_token_state_exports,
-  "TokenState": token_state_exports
+  "AddressTokenState": address_token_state_exports
+  // "TokenState": TokenState,
 };
 export {
   CRDT,
