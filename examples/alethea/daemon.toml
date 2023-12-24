@@ -20,7 +20,7 @@ db_path = "./sled"
 type = "Deno"
 main_module = "./reduce.js"
 storage_command_type = "sql"
-use_async = true
+use_async = false
 
 [storage]
 type = "Postgres"

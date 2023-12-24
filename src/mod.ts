@@ -4,7 +4,7 @@ import * as BalanceByAddress from "./reducers/crdt/balance_by_address.ts";
 
 import * as AddressState from "./reducers/sql/address_state/address_state.ts";
 import * as AddressTokenState from "./reducers/sql/address_token_state/address_token_state.ts";
-// import * as TokenState from "./reducers/sql/token_state/token_state.ts";
+import * as TokenState from "./reducers/sql/token_state/token_state.ts";
 
 type Reducer = {
   name: string;
@@ -46,7 +46,7 @@ class SQL {
   private static modules: Record<string, Module> = {
     "AddressState": AddressState,
     "AddressTokenState": AddressTokenState,
-    // "TokenState": TokenState,
+    "TokenState": TokenState,
   };
 
   static apply(blockJson: JsonValue, reducers: Reducer[]) {

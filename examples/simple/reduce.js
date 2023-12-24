@@ -1,4 +1,4 @@
-import * as reducers from "https://raw.githubusercontent.com/alethea-io/quill/main/dist/mod.js"
+import * as reducers from "file:///home/aleksandar/Projects/quill/dist/mod.js"
 
 const config = [
   {
@@ -18,5 +18,9 @@ const config = [
 ]
 
 export function reduce(blockJson) {
-  return reducers.apply(blockJson, config)
+  return reducers.CRDT.apply(blockJson, config)
 }
+
+// import blockJson from "./block.json" with { type: "json" }
+// const results = reduce(blockJson)
+// console.log(JSON.stringify(results, null, 2))

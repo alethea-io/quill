@@ -1,4 +1,4 @@
-import * as reducers from 'https://raw.githubusercontent.com/alethea-io/quill/main/dist/mod.js'
+import * as reducers from "file:///home/aleksandar/Projects/quill/dist/mod.js"
 
 const config = [
   {
@@ -25,13 +25,13 @@ const config = [
   // },
 ]
 
-export function apply(blockJson) {
+export function reduce(blockJson) {
   return reducers.SQL.apply(blockJson, config)
 }
 
-export function undo(blockJson) {
-  return reducers.SQL.undo(blockJson, config)
-}
+// export function undo(blockJson) {
+//   return reducers.SQL.undo(blockJson, config)
+// }
 
 // import blockJson from "./block.json" with { type: "json" }
 // const results = apply(blockJson)
