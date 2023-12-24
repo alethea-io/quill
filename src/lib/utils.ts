@@ -1,5 +1,5 @@
-import { blake2b } from "https://deno.land/x/blake2b@v0.1.0/mod.ts";
-import { bech32 } from "npm:bech32";
+// import { blake2b } from "https://deno.land/x/blake2b@v0.1.0/mod.ts";
+// import { bech32 } from "npm:bech32";
 
 const BYRON_UNIX = 1506203091;
 const SHELLY_UNIX = 1596491091;
@@ -19,13 +19,13 @@ export function slotToTimestamp(slotNumber: number): string {
   return date.toISOString();
 }
 
-export function assetFingerprint(policy: Uint8Array, name: Uint8Array): string {
-  const hash = blake2b(
-    new Uint8Array([...policy, ...name]),
-    undefined,
-    undefined,
-    20,
-  ) as Uint8Array;
-  const words = bech32.toWords(hash);
-  return bech32.encode("asset", words);
-}
+// export function assetFingerprint(policy: Uint8Array, name: Uint8Array): string {
+//   const hash = blake2b(
+//     new Uint8Array([...policy, ...name]),
+//     undefined,
+//     undefined,
+//     20,
+//   ) as Uint8Array;
+//   const words = bech32.toWords(hash);
+//   return bech32.encode("asset", words);
+// }
