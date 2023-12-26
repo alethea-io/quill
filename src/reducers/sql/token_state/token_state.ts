@@ -1,7 +1,7 @@
 import { encodeHex } from "https://deno.land/std@0.209.0/encoding/hex.ts";
 import type { JsonValue } from "npm:@bufbuild/protobuf";
 import * as UtxoRpc from "npm:@utxorpc-web/cardano-spec";
-import { C, assetFingerprint } from "../../../lib/mod.ts";
+import { assetFingerprint, C } from "../../../lib/mod.ts";
 
 enum Method {
   Apply = "apply",
@@ -12,11 +12,6 @@ enum Action {
   Produce = "produce",
   Consume = "consume",
 }
-
-type Token = {
-  addresses: Set<string>;
-  utxo_count: bigint;
-};
 
 type TokenState = {
   fingerprint: string;
@@ -69,6 +64,8 @@ function processTxOutput(
   if (address.as_byron()) {
     // @ts-ignore: checked if address.as_byron() is undefined
     bech32 = address.as_byron()?.to_base58();
+  } else if (address.as_enterprise()) {
+    bech32 = address.to_bech32(undefined);
   } else if (address.as_base()) {
     const network_id = address.network_id();
     const stake_cred = address.as_base()?.stake_cred();
@@ -95,10 +92,10 @@ function processTxOutput(
 
       const existingSet = addresses.get(fingerprint);
       if (existingSet) {
-        existingSet.add(bech32)
+        existingSet.add(bech32);
         addresses.set(fingerprint, existingSet);
       } else {
-        addresses.set(fingerprint, new Set(bech32))
+        addresses.set(fingerprint, new Set(bech32));
       }
 
       const utxo_count = action === Action.Produce ? 1n : -1n;
@@ -128,6 +125,7 @@ function processBlock(
   method: Method,
 ) {
   const block = UtxoRpc.Block.fromJson(blockJson);
+  const schema = config.schema;
   const table = config.table;
 
   const tokenState = new Map<string, TokenState>();
@@ -153,26 +151,32 @@ function processBlock(
       }
     }
 
-    const addresses = new Map<string, Set<string>>();
+    const mergedFingerprints = new Set<string>([
+      ...sourceAddresses.keys(),
+      ...destAddresses.keys(),
+    ]);
 
-    const mergeSets = (set1: Set<string>, set2: Set<string>) => {
-      return new Set([...set1, ...set2]);
-    };
-    
-    for (const [key, value] of sourceAddresses) {
-        addresses.set(key, new Set(value));
-    }
-    
-    for (const [key, value] of destAddresses) {
-        if (addresses.has(key)) {
-            addresses.set(key, mergeSets(addresses.get(key)!, value));
-        } else {
-            addresses.set(key, new Set(value));
+    for (const fingerprint of mergedFingerprints) {
+      // state should always exist due to processing outputs above
+      const existingState = tokenState.get(fingerprint);
+      if (existingState) {
+        existingState.tx_count += Method.Apply ? 1n : -1n;
+
+        const areSetsEqual = (setA, setB) =>
+          setA.size === setB.size &&
+          [...setA].sort().every((value, index) =>
+            value === [...setB].sort()[index]
+          );
+
+        const sourceSet = sourceAddresses.get(fingerprint);
+        const destSet = destAddresses.get(fingerprint);
+
+        if (sourceSet && destSet && !areSetsEqual(sourceSet, destSet)) {
+          existingState.transfer_count += Method.Apply ? 1n : -1n;
         }
-    }
 
-    for (const [fingerprint, address_set] of addresses) {
-      
+        tokenState.set(fingerprint, existingState);
+      }
     }
   }
 
@@ -190,10 +194,11 @@ function processBlock(
     const supplies = values.map((value) => `${value.supply}`).join(",");
     const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
     const txCounts = values.map((value) => `${value.tx_count}`).join(",");
-    const transferCounts = values.map((value) => `${value.transfer_count}`).join(",");
+    const transferCounts = values.map((value) => `${value.transfer_count}`)
+      .join(",");
 
     const inserted = `
-      INSERT INTO scrolls.${table} (
+      INSERT INTO ${schema}.${table} (
         fingerprint,
         policy,
         name,
@@ -214,13 +219,13 @@ function processBlock(
           utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
           tx_count = ${table}.tx_count + EXCLUDED.tx_count,
           transfer_count = ${table}.transfer_count + EXCLUDED.transfer_count
-    `
+    `;
 
     const deleted = `
-      DELETE FROM scrolls.${table}
+      DELETE FROM ${schema}.${table}
       WHERE fingerprint IN (${fingerprints})
         AND tx_count = 0
-    `
+    `;
 
     return [inserted, deleted];
   } else {

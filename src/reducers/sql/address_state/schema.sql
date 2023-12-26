@@ -10,6 +10,8 @@ CREATE TABLE scrolls.address_state (
     first_tx_time TIMESTAMPTZ NOT NULL,
     last_tx_time TIMESTAMPTZ NOT NULL
 );
+CREATE INDEX idx_address_state_bech32 ON scrolls.address_state(bech32);
+
 
 CREATE TABLE scrolls.stake_address_state (
     id SERIAL8 PRIMARY KEY UNIQUE,
@@ -23,3 +25,4 @@ CREATE TABLE scrolls.stake_address_state (
     first_tx_time TIMESTAMPTZ NOT NULL,
     last_tx_time TIMESTAMPTZ NOT NULL
 );
+CREATE INDEX idx_stake_address_state_bech32 ON scrolls.stake_address_state(bech32);

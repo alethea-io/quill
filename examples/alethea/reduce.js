@@ -1,28 +1,29 @@
-import * as reducers from "file:///home/aleksandar/Projects/quill/dist/mod.js"
+import * as reducers from "file:///home/aleksandar/Projects/alethea/alethea-data/quill/dist/mod.js"
 
 const config = [
   {
     name: "AddressState",
     config: {
-      addressType: "payment",
       schema: "scrolls",
       table: "address_state",
+      addressType: "payment",
     }
   },
   {
     name: "AddressState",
     config: {
-      addressType: "stake",
       schema: "scrolls",
       table: "stake_address_state",
+      addressType: "stake",
     }
   },
-  // {
-  //   name: "TokenState",
-  //   config: {
-  //     table: "token_state",
-  //   }
-  // },
+  {
+    name: "TokenState",
+    config: {
+      schema: "scrolls",
+      table: "token_state",
+    }
+  },
 ]
 
 export function reduce(blockJson) {

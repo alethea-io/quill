@@ -28,9 +28,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// ../../.cache/deno/deno_esbuild/bech32@2.0.0/node_modules/bech32/dist/index.js
+// ../../../../.cache/deno/deno_esbuild/bech32@2.0.0/node_modules/bech32/dist/index.js
 var require_dist = __commonJS({
-  "../../.cache/deno/deno_esbuild/bech32@2.0.0/node_modules/bech32/dist/index.js"(exports) {
+  "../../../../.cache/deno/deno_esbuild/bech32@2.0.0/node_modules/bech32/dist/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.bech32m = exports.bech32 = void 0;
@@ -201,7 +201,7 @@ __export(balance_by_address_exports, {
   undo: () => undo
 });
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/assert.js
 function assert(condition, msg) {
   if (!condition) {
     throw new Error(msg);
@@ -233,7 +233,7 @@ function assertFloat32(arg) {
     throw new Error("invalid float 32: " + arg);
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/enum.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/enum.js
 var enumTypeSymbol = Symbol("@bufbuild/protobuf/enum-type");
 function getEnumType(enumObject) {
   const t = enumObject[enumTypeSymbol];
@@ -287,7 +287,7 @@ function normalizeEnumValue(value) {
   return Object.assign(Object.assign({}, value), { localName: value.name });
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/message.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/message.js
 var Message = class {
   /**
    * Compare with a message of the same type.
@@ -389,7 +389,7 @@ var Message = class {
   }
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/message-type.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/message-type.js
 function makeMessageType(runtime, typeName, fields, opt) {
   var _a;
   const localName = (_a = opt === null || opt === void 0 ? void 0 : opt.localName) !== null && _a !== void 0 ? _a : typeName.substring(typeName.lastIndexOf(".") + 1);
@@ -420,7 +420,7 @@ function makeMessageType(runtime, typeName, fields, opt) {
   return type;
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/proto-runtime.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/proto-runtime.js
 function makeProtoRuntime(syntax, json, bin, util) {
   return {
     syntax,
@@ -436,7 +436,7 @@ function makeProtoRuntime(syntax, json, bin, util) {
   };
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/field.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/field.js
 var ScalarType;
 (function(ScalarType2) {
   ScalarType2[ScalarType2["DOUBLE"] = 1] = "DOUBLE";
@@ -461,7 +461,7 @@ var LongType;
   LongType2[LongType2["STRING"] = 1] = "STRING";
 })(LongType || (LongType = {}));
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/google/varint.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/google/varint.js
 function varint64read() {
   let lowBits = 0;
   let highBits = 0;
@@ -641,7 +641,7 @@ function varint32read() {
   return result >>> 0;
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js
 function makeInt64Support() {
   const dv = new DataView(new ArrayBuffer(8));
   const ok = typeof BigInt === "function" && typeof dv.getBigInt64 === "function" && typeof dv.getBigUint64 === "function" && typeof dv.setBigInt64 === "function" && typeof dv.setBigUint64 === "function" && (typeof process != "object" || typeof process.env != "object" || process.env.BUF_BIGINT_DISABLE !== "1");
@@ -733,7 +733,7 @@ function makeInt64Support() {
 }
 var protoInt64 = makeInt64Support();
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/binary-encoding.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/binary-encoding.js
 var WireType;
 (function(WireType2) {
   WireType2[WireType2["Varint"] = 0] = "Varint";
@@ -1096,7 +1096,7 @@ var BinaryReader = class {
   }
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-wrapper.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-wrapper.js
 function wrapField(type, value) {
   if (value instanceof Message || !type.fieldWrapper) {
     return value;
@@ -1115,7 +1115,7 @@ var wktWrapperToScalarType = {
   "google.protobuf.BytesValue": ScalarType.BYTES
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/scalars.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/scalars.js
 function scalarEquals(type, a, b) {
   if (a === b) {
     return true;
@@ -1215,7 +1215,7 @@ function scalarTypeInfo(type, value) {
   return [wireType, method, isUndefined || isIntrinsicDefault];
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-common.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-common.js
 var unknownFieldsSymbol = Symbol("@bufbuild/protobuf/unknown-fields");
 var readDefaults = {
   readUnknownFields: true,
@@ -1469,7 +1469,7 @@ function writePacked(writer, type, fieldNo, value) {
   writer.join();
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-proto3.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/binary-format-proto3.js
 function makeBinaryFormatProto3() {
   return Object.assign(Object.assign({}, makeBinaryFormatCommon()), { writeMessage(message, writer, options) {
     const type = message.getType();
@@ -1525,7 +1525,7 @@ function makeBinaryFormatProto3() {
   } });
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-base64.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto-base64.js
 var encTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".split("");
 var decTable = [];
 for (let i = 0; i < encTable.length; i++)
@@ -1626,7 +1626,7 @@ var protoBase64 = {
   }
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-common.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-common.js
 var jsonReadDefaults = {
   ignoreUnknownFields: false
 };
@@ -2019,7 +2019,7 @@ function writeScalar2(type, value, emitIntrinsicDefault) {
   }
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-proto3.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/json-format-proto3.js
 function makeJsonFormatProto3() {
   return makeJsonFormatCommon((writeEnum2, writeScalar3) => {
     return function writeField(field, value, options) {
@@ -2083,7 +2083,7 @@ function makeJsonFormatProto3() {
   });
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/util-common.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/util-common.js
 function makeUtilCommon() {
   return {
     setEnumType,
@@ -2273,7 +2273,7 @@ function toU8Arr(input) {
   return input instanceof Uint8Array ? input : new Uint8Array(input);
 }
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-list.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field-list.js
 var InternalFieldList = class {
   constructor(fields, normalizer) {
     this._fields = fields;
@@ -2331,7 +2331,7 @@ var InternalFieldList = class {
   }
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/names.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/names.js
 function localFieldName(protoName, inOneof) {
   const name = protoCamelCase(protoName);
   if (inOneof) {
@@ -2411,7 +2411,7 @@ var safeObjectProperty = (name) => {
   return name;
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/private/field.js
 var InternalOneofInfo = class {
   constructor(name) {
     this.kind = "oneof";
@@ -2438,7 +2438,7 @@ var InternalOneofInfo = class {
   }
 };
 
-// ../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto3.js
+// ../../../../.cache/deno/deno_esbuild/@bufbuild/protobuf@1.4.2/node_modules/@bufbuild/protobuf/dist/esm/proto3.js
 var proto3 = makeProtoRuntime("proto3", makeJsonFormatProto3(), makeBinaryFormatProto3(), Object.assign(Object.assign({}, makeUtilCommon()), {
   newFieldList(fields) {
     return new InternalFieldList(fields, normalizeFieldInfosProto3);
@@ -2498,7 +2498,7 @@ function normalizeFieldInfosProto3(fieldInfos) {
   return r;
 }
 
-// ../../.cache/deno/deno_esbuild/@utxorpc-web/cardano-spec@1.0.0-alpha.0/node_modules/@utxorpc-web/cardano-spec/lib/utxorpc/cardano/v1/cardano_pb.js
+// ../../../../.cache/deno/deno_esbuild/@utxorpc-web/cardano-spec@1.0.0-alpha.0/node_modules/@utxorpc-web/cardano-spec/lib/utxorpc/cardano/v1/cardano_pb.js
 var RedeemerPurpose;
 (function(RedeemerPurpose2) {
   RedeemerPurpose2[RedeemerPurpose2["UNSPECIFIED"] = 0] = "UNSPECIFIED";
@@ -4426,7 +4426,7 @@ function processTxOutput2(txOutput, addressType, action) {
       }
       break;
     default:
-      throw new Error(`address type "${addressType}" not implemented`);
+      throw new Error(`address type "${addressType}" not implemented!`);
   }
   let amount;
   let count;
@@ -4464,6 +4464,7 @@ function processBlock2(blockJson, config, method) {
   const block = Block.fromJson(blockJson);
   const blockTime = slotToTimestamp(Number(block.header?.slot));
   const addressType = config.addressType;
+  const schema = config.schema;
   const table = config.table;
   const addressState = /* @__PURE__ */ new Map();
   for (const tx of block.body?.tx ?? []) {
@@ -4523,7 +4524,7 @@ function processBlock2(blockJson, config, method) {
     );
     const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
     const inserted = `
-      INSERT INTO scrolls.${table} (
+      INSERT INTO ${schema}.${table} (
         bech32,
         raw,
         balance,
@@ -4534,7 +4535,7 @@ function processBlock2(blockJson, config, method) {
         first_tx_time,
         last_tx_time
       )
-      SELECT unnest(ARRAY[${addresses}]) AS bech32,
+      SELECT  unnest(ARRAY[${addresses}]) AS bech32,
               unnest(ARRAY[${addressesRaw}]) AS raw,
               unnest(ARRAY[${balances}]) AS balance,
               unnest(ARRAY[${utxoCounts}]) AS utxo_count,
@@ -4552,7 +4553,7 @@ function processBlock2(blockJson, config, method) {
           last_tx_time = EXCLUDED.last_tx_time
     `;
     const deleted = `
-      DELETE FROM scrolls.${table}
+      DELETE FROM ${schema}.${table}
       WHERE bech32 IN (${addresses})
         AND tx_count = 0
     `;
@@ -4615,6 +4616,8 @@ function processTxOutput3(txOutput, action, tokenState, addresses) {
   let bech322;
   if (address.as_byron()) {
     bech322 = address.as_byron()?.to_base58();
+  } else if (address.as_enterprise()) {
+    bech322 = address.to_bech32(void 0);
   } else if (address.as_base()) {
     const network_id = address.network_id();
     const stake_cred = address.as_base()?.stake_cred();
@@ -4661,6 +4664,7 @@ function processTxOutput3(txOutput, action, tokenState, addresses) {
 }
 function processBlock4(blockJson, config, method) {
   const block = Block.fromJson(blockJson);
+  const schema = config.schema;
   const table = config.table;
   const tokenState = /* @__PURE__ */ new Map();
   for (const tx of block.body?.tx ?? []) {
@@ -4680,21 +4684,24 @@ function processBlock4(blockJson, config, method) {
         processTxOutput3(txOutput, action, tokenState, sourceAddresses);
       }
     }
-    const addresses = /* @__PURE__ */ new Map();
-    const mergeSets = (set1, set2) => {
-      return /* @__PURE__ */ new Set([...set1, ...set2]);
-    };
-    for (const [key, value] of sourceAddresses) {
-      addresses.set(key, new Set(value));
-    }
-    for (const [key, value] of destAddresses) {
-      if (addresses.has(key)) {
-        addresses.set(key, mergeSets(addresses.get(key), value));
-      } else {
-        addresses.set(key, new Set(value));
+    const mergedFingerprints = /* @__PURE__ */ new Set([
+      ...sourceAddresses.keys(),
+      ...destAddresses.keys()
+    ]);
+    for (const fingerprint of mergedFingerprints) {
+      const existingState = tokenState.get(fingerprint);
+      if (existingState) {
+        existingState.tx_count += "apply" /* Apply */ ? 1n : -1n;
+        const areSetsEqual = (setA, setB) => setA.size === setB.size && [...setA].sort().every(
+          (value, index) => value === [...setB].sort()[index]
+        );
+        const sourceSet = sourceAddresses.get(fingerprint);
+        const destSet = destAddresses.get(fingerprint);
+        if (sourceSet && destSet && !areSetsEqual(sourceSet, destSet)) {
+          existingState.transfer_count += "apply" /* Apply */ ? 1n : -1n;
+        }
+        tokenState.set(fingerprint, existingState);
       }
-    }
-    for (const [fingerprint, address_set] of addresses) {
     }
   }
   const keys = Array.from(tokenState.keys());
@@ -4712,7 +4719,7 @@ function processBlock4(blockJson, config, method) {
     const txCounts = values.map((value) => `${value.tx_count}`).join(",");
     const transferCounts = values.map((value) => `${value.transfer_count}`).join(",");
     const inserted = `
-      INSERT INTO scrolls.${table} (
+      INSERT INTO ${schema}.${table} (
         fingerprint,
         policy,
         name,
@@ -4735,7 +4742,7 @@ function processBlock4(blockJson, config, method) {
           transfer_count = ${table}.transfer_count + EXCLUDED.transfer_count
     `;
     const deleted = `
-      DELETE FROM scrolls.${table}
+      DELETE FROM ${schema}.${table}
       WHERE fingerprint IN (${fingerprints})
         AND tx_count = 0
     `;

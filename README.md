@@ -7,3 +7,9 @@ Quill is a javascript plugin package for the Cardano indexer [Scrolls](https://g
 ```bash
 deno run --allow-read --allow-net --allow-env --allow-run --allow-write  build.ts
 ```
+
+## TODO
+- Cursor from db
+- Finalize
+- Implement dolos node
+- 

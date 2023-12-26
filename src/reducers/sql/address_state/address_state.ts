@@ -74,7 +74,7 @@ function processTxOutput(
       }
       break;
     default:
-      throw new Error(`address type "${addressType}" not implemented`);
+      throw new Error(`address type "${addressType}" not implemented!`);
   }
 
   let amount;
@@ -123,6 +123,7 @@ function processBlock(
   const block = UtxoRpc.Block.fromJson(blockJson);
   const blockTime = slotToTimestamp(Number(block.header?.slot));
   const addressType = config.addressType;
+  const schema = config.schema;
   const table = config.table;
 
   const addressState = new Map<string, AddressState>();
@@ -193,7 +194,7 @@ function processBlock(
     const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
 
     const inserted = `
-      INSERT INTO scrolls.${table} (
+      INSERT INTO ${schema}.${table} (
         bech32,
         raw,
         balance,
@@ -204,7 +205,7 @@ function processBlock(
         first_tx_time,
         last_tx_time
       )
-      SELECT unnest(ARRAY[${addresses}]) AS bech32,
+      SELECT  unnest(ARRAY[${addresses}]) AS bech32,
               unnest(ARRAY[${addressesRaw}]) AS raw,
               unnest(ARRAY[${balances}]) AS balance,
               unnest(ARRAY[${utxoCounts}]) AS utxo_count,
@@ -223,7 +224,7 @@ function processBlock(
     `
 
     const deleted = `
-      DELETE FROM scrolls.${table}
+      DELETE FROM ${schema}.${table}
       WHERE bech32 IN (${addresses})
         AND tx_count = 0
     `
