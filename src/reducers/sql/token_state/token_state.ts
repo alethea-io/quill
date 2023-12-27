@@ -125,8 +125,6 @@ function processBlock(
   method: Method,
 ) {
   const block = UtxoRpc.Block.fromJson(blockJson);
-  const schema = config.schema;
-  const table = config.table;
 
   const tokenState = new Map<string, TokenState>();
 
@@ -162,7 +160,7 @@ function processBlock(
       if (existingState) {
         existingState.tx_count += Method.Apply ? 1n : -1n;
 
-        const areSetsEqual = (setA, setB) =>
+        const areSetsEqual = (setA: Set<string>, setB: Set<string>) =>
           setA.size === setB.size &&
           [...setA].sort().every((value, index) =>
             value === [...setB].sort()[index]
@@ -198,7 +196,7 @@ function processBlock(
       .join(",");
 
     const inserted = `
-      INSERT INTO ${schema}.${table} (
+      INSERT INTO scrolls.token_state (
         fingerprint,
         policy,
         name,
@@ -215,14 +213,14 @@ function processBlock(
               unnest(ARRAY[${txCounts}]) AS tx_count,
               unnest(ARRAY[${transferCounts}]) AS transfer_count
       ON CONFLICT (fingerprint) DO UPDATE
-      SET supply = ${table}.supply + EXCLUDED.supply,
-          utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
-          tx_count = ${table}.tx_count + EXCLUDED.tx_count,
-          transfer_count = ${table}.transfer_count + EXCLUDED.transfer_count
+      SET supply = token_state.supply + EXCLUDED.supply,
+          utxo_count = token_state.utxo_count + EXCLUDED.utxo_count,
+          tx_count = token_state.tx_count + EXCLUDED.tx_count,
+          transfer_count = token_state.transfer_count + EXCLUDED.transfer_count
     `;
 
     const deleted = `
-      DELETE FROM ${schema}.${table}
+      DELETE FROM scrolls.token_state
       WHERE fingerprint IN (${fingerprints})
         AND tx_count = 0
     `;

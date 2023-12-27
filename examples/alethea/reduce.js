@@ -4,24 +4,29 @@ const config = [
   {
     name: "AddressState",
     config: {
-      schema: "scrolls",
-      table: "address_state",
       addressType: "payment",
     }
   },
   {
     name: "AddressState",
     config: {
-      schema: "scrolls",
-      table: "stake_address_state",
       addressType: "stake",
     }
   },
   {
     name: "TokenState",
+    config: {}
+  },
+  {
+    name: "AddressTokenState",
     config: {
-      schema: "scrolls",
-      table: "token_state",
+      addressType: "payment",
+    }
+  },
+  {
+    name: "AddressTokenState",
+    config: {
+      addressType: "stake",
     }
   },
 ]

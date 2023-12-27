@@ -20,7 +20,3 @@ const config = [
 export function reduce(blockJson) {
   return reducers.CRDT.apply(blockJson, config)
 }
-
-// import blockJson from "./block.json" with { type: "json" }
-// const results = reduce(blockJson)
-// console.log(JSON.stringify(results, null, 2))

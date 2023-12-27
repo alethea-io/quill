@@ -13,12 +13,16 @@ enum Action {
   Consume = "consume",
 }
 
-type TxOutput = {
-  bech32: string;
-  raw: Uint8Array;
-  amount: bigint;
-  count: bigint;
-};
+enum AddressType {
+  Payment = "payment",
+  Stake = "stake",
+}
+
+function toAddressType(value: string): AddressType | undefined {
+  return Object.values(AddressType).find((type) => type === value) as
+    | AddressType
+    | undefined;
+}
 
 type AddressState = {
   bech32: string;
@@ -34,7 +38,9 @@ function processTxOutput(
   txOutput: UtxoRpc.TxOutput,
   addressType: string,
   action: Action,
-): TxOutput | null {
+  addressState: Map<string, AddressState>,
+  addresses: Set<string>,
+) {
   const address = C.Address.from_bytes(txOutput.address);
 
   let bech32: string;
@@ -70,12 +76,14 @@ function processTxOutput(
 
         raw = stake_address.to_bytes();
       } else {
-        return null;
+        return;
       }
       break;
     default:
       throw new Error(`address type "${addressType}" not implemented!`);
   }
+
+  addresses.add(bech32);
 
   let amount;
   let count;
@@ -90,27 +98,20 @@ function processTxOutput(
       break;
   }
 
-  return { bech32, raw, amount, count };
-}
-
-function updateAddressState(
-  txo: TxOutput,
-  addressState: Map<string, AddressState>,
-) {
-  const existingState = addressState.get(txo.bech32);
+  const existingState = addressState.get(bech32);
   if (existingState) {
-    existingState.balance += txo.amount;
-    existingState.utxo_count += txo.count;
-    addressState.set(txo.bech32, existingState);
+    existingState.balance += amount;
+    existingState.utxo_count += count;
+    addressState.set(bech32, existingState);
   } else {
-    addressState.set(txo.bech32, {
-      bech32: txo.bech32,
-      raw: txo.raw,
-      balance: txo.amount,
+    addressState.set(bech32, {
+      bech32: bech32,
+      raw: raw,
+      balance: amount,
       tx_count: 0n,
       tx_count_as_source: 0n,
       tx_count_as_dest: 0n,
-      utxo_count: txo.count,
+      utxo_count: count,
     });
   }
 }
@@ -122,9 +123,11 @@ function processBlock(
 ) {
   const block = UtxoRpc.Block.fromJson(blockJson);
   const blockTime = slotToTimestamp(Number(block.header?.slot));
-  const addressType = config.addressType;
-  const schema = config.schema;
-  const table = config.table;
+
+  const addressType = toAddressType(config.addressType);
+  if (addressType === undefined) {
+    throw new Error(`Invalid address type "${config.addressType}"`);
+  }
 
   const addressState = new Map<string, AddressState>();
 
@@ -134,22 +137,26 @@ function processBlock(
 
     for (const txOutput of tx.outputs) {
       const action = method === Method.Apply ? Action.Produce : Action.Consume;
-      const txo = processTxOutput(txOutput, addressType, action);
-      if (txo) {
-        updateAddressState(txo, addressState);
-        destAddresses.add(txo.bech32);
-      }
+      processTxOutput(
+        txOutput,
+        addressType,
+        action,
+        addressState,
+        destAddresses,
+      );
     }
 
     for (const txInput of tx.inputs) {
       const action = method === Method.Apply ? Action.Consume : Action.Produce;
       const txOutput = txInput.asOutput;
-      const txo = txOutput
-        ? processTxOutput(txOutput, addressType, action)
-        : null;
-      if (txo) {
-        updateAddressState(txo, addressState);
-        sourceAddresses.add(txo.bech32);
+      if (txOutput) {
+        processTxOutput(
+          txOutput,
+          addressType,
+          action,
+          addressState,
+          sourceAddresses,
+        );
       }
     }
 
@@ -176,11 +183,10 @@ function processBlock(
     });
   }
 
-  const keys = Array.from(addressState.keys());
   const values = Array.from(addressState.values());
 
-  if (keys.length > 0) {
-    const addresses = keys.map((key) => `'${key}'`).join(",");
+  if (values.length > 0) {
+    const addresses = values.map((value) => `'${value.bech32}'`).join(",");
     const addressesRaw = values.map((value) =>
       `decode('${encodeHex(value.raw)}', 'hex')`
     ).join(",");
@@ -193,8 +199,12 @@ function processBlock(
     );
     const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
 
+    const table = addressType == AddressType.Payment
+      ? "address_state"
+      : "stake_address_state";
+
     const inserted = `
-      INSERT INTO ${schema}.${table} (
+      INSERT INTO scrolls.${table} (
         bech32,
         raw,
         balance,
@@ -221,13 +231,13 @@ function processBlock(
           tx_count_as_source = ${table}.tx_count_as_source + EXCLUDED.tx_count_as_source,
           tx_count_as_dest = ${table}.tx_count_as_dest + EXCLUDED.tx_count_as_dest,
           last_tx_time = EXCLUDED.last_tx_time
-    `
+    `;
 
     const deleted = `
-      DELETE FROM ${schema}.${table}
+      DELETE FROM scrolls.${table}
       WHERE bech32 IN (${addresses})
         AND tx_count = 0
-    `
+    `;
 
     return [inserted, deleted];
   } else {

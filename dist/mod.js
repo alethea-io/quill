@@ -4397,7 +4397,15 @@ function encodeHex(src) {
 }
 
 // src/reducers/sql/address_state/address_state.ts
-function processTxOutput2(txOutput, addressType, action) {
+var AddressType = /* @__PURE__ */ ((AddressType3) => {
+  AddressType3["Payment"] = "payment";
+  AddressType3["Stake"] = "stake";
+  return AddressType3;
+})(AddressType || {});
+function toAddressType(value) {
+  return Object.values(AddressType).find((type) => type === value);
+}
+function processTxOutput2(txOutput, addressType, action, addressState, addresses) {
   const address = C.Address.from_bytes(txOutput.address);
   let bech322;
   let raw;
@@ -4422,12 +4430,13 @@ function processTxOutput2(txOutput, addressType, action) {
         bech322 = stake_address.to_bech32(void 0);
         raw = stake_address.to_bytes();
       } else {
-        return null;
+        return;
       }
       break;
     default:
       throw new Error(`address type "${addressType}" not implemented!`);
   }
+  addresses.add(bech322);
   let amount;
   let count;
   switch (action) {
@@ -4440,51 +4449,55 @@ function processTxOutput2(txOutput, addressType, action) {
       count = 1n;
       break;
   }
-  return { bech32: bech322, raw, amount, count };
-}
-function updateAddressState(txo, addressState) {
-  const existingState = addressState.get(txo.bech32);
+  const existingState = addressState.get(bech322);
   if (existingState) {
-    existingState.balance += txo.amount;
-    existingState.utxo_count += txo.count;
-    addressState.set(txo.bech32, existingState);
+    existingState.balance += amount;
+    existingState.utxo_count += count;
+    addressState.set(bech322, existingState);
   } else {
-    addressState.set(txo.bech32, {
-      bech32: txo.bech32,
-      raw: txo.raw,
-      balance: txo.amount,
+    addressState.set(bech322, {
+      bech32: bech322,
+      raw,
+      balance: amount,
       tx_count: 0n,
       tx_count_as_source: 0n,
       tx_count_as_dest: 0n,
-      utxo_count: txo.count
+      utxo_count: count
     });
   }
 }
 function processBlock2(blockJson, config, method) {
   const block = Block.fromJson(blockJson);
   const blockTime = slotToTimestamp(Number(block.header?.slot));
-  const addressType = config.addressType;
-  const schema = config.schema;
-  const table = config.table;
+  const addressType = toAddressType(config.addressType);
+  if (addressType === void 0) {
+    throw new Error(`Invalid address type "${config.addressType}"`);
+  }
   const addressState = /* @__PURE__ */ new Map();
   for (const tx of block.body?.tx ?? []) {
     const sourceAddresses = /* @__PURE__ */ new Set();
     const destAddresses = /* @__PURE__ */ new Set();
     for (const txOutput of tx.outputs) {
       const action = method === "apply" /* Apply */ ? "produce" /* Produce */ : "consume" /* Consume */;
-      const txo = processTxOutput2(txOutput, addressType, action);
-      if (txo) {
-        updateAddressState(txo, addressState);
-        destAddresses.add(txo.bech32);
-      }
+      processTxOutput2(
+        txOutput,
+        addressType,
+        action,
+        addressState,
+        destAddresses
+      );
     }
     for (const txInput of tx.inputs) {
       const action = method === "apply" /* Apply */ ? "consume" /* Consume */ : "produce" /* Produce */;
       const txOutput = txInput.asOutput;
-      const txo = txOutput ? processTxOutput2(txOutput, addressType, action) : null;
-      if (txo) {
-        updateAddressState(txo, addressState);
-        sourceAddresses.add(txo.bech32);
+      if (txOutput) {
+        processTxOutput2(
+          txOutput,
+          addressType,
+          action,
+          addressState,
+          sourceAddresses
+        );
       }
     }
     (/* @__PURE__ */ new Set([...sourceAddresses, ...destAddresses])).forEach((bech322) => {
@@ -4509,10 +4522,9 @@ function processBlock2(blockJson, config, method) {
       }
     });
   }
-  const keys = Array.from(addressState.keys());
   const values = Array.from(addressState.values());
-  if (keys.length > 0) {
-    const addresses = keys.map((key) => `'${key}'`).join(",");
+  if (values.length > 0) {
+    const addresses = values.map((value) => `'${value.bech32}'`).join(",");
     const addressesRaw = values.map(
       (value) => `decode('${encodeHex(value.raw)}', 'hex')`
     ).join(",");
@@ -4523,8 +4535,9 @@ function processBlock2(blockJson, config, method) {
       ","
     );
     const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
+    const table = addressType == "payment" /* Payment */ ? "address_state" : "stake_address_state";
     const inserted = `
-      INSERT INTO ${schema}.${table} (
+      INSERT INTO scrolls.${table} (
         bech32,
         raw,
         balance,
@@ -4553,7 +4566,7 @@ function processBlock2(blockJson, config, method) {
           last_tx_time = EXCLUDED.last_tx_time
     `;
     const deleted = `
-      DELETE FROM ${schema}.${table}
+      DELETE FROM scrolls.${table}
       WHERE bech32 IN (${addresses})
         AND tx_count = 0
     `;
@@ -4575,8 +4588,133 @@ __export(address_token_state_exports, {
   apply: () => apply3,
   undo: () => undo3
 });
+var AddressType2 = /* @__PURE__ */ ((AddressType3) => {
+  AddressType3["Payment"] = "payment";
+  AddressType3["Stake"] = "stake";
+  return AddressType3;
+})(AddressType2 || {});
+function toAddressType2(value) {
+  return Object.values(AddressType2).find((type) => type === value);
+}
+function processTxOutput3(txOutput, addressType, action, addressTokenState) {
+  const address = C.Address.from_bytes(txOutput.address);
+  let bech322;
+  switch (addressType) {
+    case "payment" /* Payment */:
+      if (address.as_byron()) {
+        bech322 = address.as_byron()?.to_base58();
+      } else if (address.to_bech32(void 0)) {
+        bech322 = address.to_bech32(void 0);
+      } else {
+        throw new Error(
+          `address "${encodeHex(txOutput.address)}" could not be parsed!`
+        );
+      }
+      break;
+    case "stake" /* Stake */:
+      if (address.as_base()) {
+        const network_id = address.network_id();
+        const stake_cred = address.as_base()?.stake_cred();
+        const stake_address = C.RewardAddress.new(network_id, stake_cred).to_address();
+        bech322 = stake_address.to_bech32(void 0);
+      } else {
+        return;
+      }
+      break;
+    default:
+      throw new Error(`address type "${addressType}" not implemented!`);
+  }
+  let fingerprint;
+  for (const multiasset of txOutput.assets ?? []) {
+    for (const asset of multiasset.assets) {
+      fingerprint = assetFingerprint(multiasset.policyId, asset.name);
+      const balance = action === "produce" /* Produce */ ? asset.outputCoin : -asset.outputCoin;
+      const existingState = addressTokenState.get(bech322 + fingerprint);
+      if (existingState) {
+        existingState.balance += balance;
+        addressTokenState.set(bech322 + fingerprint, existingState);
+      } else {
+        addressTokenState.set(bech322 + fingerprint, {
+          bech32: bech322,
+          fingerprint,
+          balance
+        });
+      }
+    }
+  }
+}
 function processBlock3(blockJson, config, method) {
-  return [];
+  const block = Block.fromJson(blockJson);
+  const addressType = toAddressType2(config.addressType);
+  if (addressType === void 0) {
+    throw new Error(`Invalid address type "${config.addressType}"`);
+  }
+  const addressTokenState = /* @__PURE__ */ new Map();
+  for (const tx of block.body?.tx ?? []) {
+    for (const txOutput of tx.outputs) {
+      const action = method === "apply" /* Apply */ ? "produce" /* Produce */ : "consume" /* Consume */;
+      processTxOutput3(txOutput, addressType, action, addressTokenState);
+    }
+    for (const txInput of tx.inputs) {
+      const action = method === "apply" /* Apply */ ? "consume" /* Consume */ : "produce" /* Produce */;
+      const txOutput = txInput.asOutput;
+      if (txOutput) {
+        processTxOutput3(txOutput, addressType, action, addressTokenState);
+      }
+    }
+  }
+  const values = Array.from(addressTokenState.values());
+  if (values.length > 0) {
+    const addresses = values.map((value) => `'${value.bech32}'`).join(",");
+    const fingerprints = values.map((value) => `'${value.fingerprint}'`).join(
+      ","
+    );
+    const balances = values.map((value) => `${value.balance}`).join(",");
+    const prefix = addressType == "payment" /* Payment */ ? "address" : "stake_address";
+    const inserted = `
+      WITH 
+      address AS (
+        SELECT id, bech32 FROM scrolls.${prefix}_state WHERE bech32 IN (${addresses})
+      ),
+      token AS (
+        SELECT id, fingerprint FROM scrolls.token_state WHERE fingerprint IN (${fingerprints})
+      )
+      INSERT INTO scrolls.${prefix}_token_state (
+        ${prefix}_id,
+        token_id,
+        balance
+      )
+      SELECT  address.id as ${prefix}_id
+          ,   token.id as token_id
+          ,   addressToken.balance
+      FROM (
+        SELECT  unnest(ARRAY[${addresses}]) AS bech32,
+                unnest(ARRAY[${fingerprints}]) AS fingerprint,
+                unnest(ARRAY[${balances}]) AS balance
+      ) as addressToken
+      JOIN address ON address.bech32 = addressToken.bech32
+      JOIN token ON token.fingerprint = addressToken.fingerprint
+      ON CONFLICT (${prefix}_id, token_id) DO UPDATE
+      SET balance = ${prefix}_token_state.balance + EXCLUDED.balance;
+    `;
+    const deleted = `
+      WITH 
+      address AS (
+        SELECT id, bech32 FROM scrolls.${prefix}_state WHERE bech32 IN (${addresses})
+      ),
+      token AS (
+        SELECT id, fingerprint FROM scrolls.token_state WHERE fingerprint IN (${fingerprints})
+      )
+      DELETE FROM scrolls.${prefix}_token_state
+      USING address, token
+      WHERE ${prefix}_id = address.id
+        AND token_id = token.id
+        AND balance = 0;
+    `;
+    return [inserted, deleted];
+  } else {
+    return [];
+  }
 }
 function apply3(blockJson, config) {
   return processBlock3(blockJson, config, "apply" /* Apply */);
@@ -4611,7 +4749,7 @@ function processMint(mint, method, tokenState) {
     }
   }
 }
-function processTxOutput3(txOutput, action, tokenState, addresses) {
+function processTxOutput4(txOutput, action, tokenState, addresses) {
   const address = C.Address.from_bytes(txOutput.address);
   let bech322;
   if (address.as_byron()) {
@@ -4664,8 +4802,6 @@ function processTxOutput3(txOutput, action, tokenState, addresses) {
 }
 function processBlock4(blockJson, config, method) {
   const block = Block.fromJson(blockJson);
-  const schema = config.schema;
-  const table = config.table;
   const tokenState = /* @__PURE__ */ new Map();
   for (const tx of block.body?.tx ?? []) {
     for (const mint of tx.mint ?? []) {
@@ -4675,13 +4811,13 @@ function processBlock4(blockJson, config, method) {
     const destAddresses = /* @__PURE__ */ new Map();
     for (const txOutput of tx.outputs) {
       const action = method === "apply" /* Apply */ ? "produce" /* Produce */ : "consume" /* Consume */;
-      processTxOutput3(txOutput, action, tokenState, destAddresses);
+      processTxOutput4(txOutput, action, tokenState, destAddresses);
     }
     for (const txInput of tx.inputs) {
       const action = method === "apply" /* Apply */ ? "consume" /* Consume */ : "produce" /* Produce */;
       const txOutput = txInput.asOutput;
       if (txOutput) {
-        processTxOutput3(txOutput, action, tokenState, sourceAddresses);
+        processTxOutput4(txOutput, action, tokenState, sourceAddresses);
       }
     }
     const mergedFingerprints = /* @__PURE__ */ new Set([
@@ -4719,7 +4855,7 @@ function processBlock4(blockJson, config, method) {
     const txCounts = values.map((value) => `${value.tx_count}`).join(",");
     const transferCounts = values.map((value) => `${value.transfer_count}`).join(",");
     const inserted = `
-      INSERT INTO ${schema}.${table} (
+      INSERT INTO scrolls.token_state (
         fingerprint,
         policy,
         name,
@@ -4736,13 +4872,13 @@ function processBlock4(blockJson, config, method) {
               unnest(ARRAY[${txCounts}]) AS tx_count,
               unnest(ARRAY[${transferCounts}]) AS transfer_count
       ON CONFLICT (fingerprint) DO UPDATE
-      SET supply = ${table}.supply + EXCLUDED.supply,
-          utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
-          tx_count = ${table}.tx_count + EXCLUDED.tx_count,
-          transfer_count = ${table}.transfer_count + EXCLUDED.transfer_count
+      SET supply = token_state.supply + EXCLUDED.supply,
+          utxo_count = token_state.utxo_count + EXCLUDED.utxo_count,
+          tx_count = token_state.tx_count + EXCLUDED.tx_count,
+          transfer_count = token_state.transfer_count + EXCLUDED.transfer_count
     `;
     const deleted = `
-      DELETE FROM ${schema}.${table}
+      DELETE FROM scrolls.token_state
       WHERE fingerprint IN (${fingerprints})
         AND tx_count = 0
     `;
