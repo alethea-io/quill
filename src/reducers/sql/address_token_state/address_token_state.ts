@@ -1,7 +1,7 @@
 import { encodeHex } from "https://deno.land/std@0.209.0/encoding/hex.ts";
 import type { JsonValue } from "npm:@bufbuild/protobuf";
 import * as UtxoRpc from "npm:@utxorpc-web/cardano-spec";
-import { assetFingerprint, C } from "../../../lib/mod.ts";
+import { assetFingerprint, C, slotToTimestamp } from "../../../lib/mod.ts";
 
 enum Method {
   Apply = "apply",
@@ -102,6 +102,7 @@ function processBlock(
   method: Method,
 ) {
   const block = UtxoRpc.Block.fromJson(blockJson);
+  const blockTime = slotToTimestamp(Number(block.header?.slot));
 
   const addressType = toAddressType(config.addressType);
   if (addressType === undefined) {
@@ -147,13 +148,17 @@ function processBlock(
         SELECT id, fingerprint FROM scrolls.token_state WHERE fingerprint IN (${fingerprints})
       )
       INSERT INTO scrolls.${prefix}_token_state (
-        ${prefix}_id,
+        address_id,
         token_id,
-        balance
+        balance,
+        first_tx_time,
+        last_tx_time
       )
-      SELECT  address.id as ${prefix}_id
-          ,   token.id as token_id
-          ,   addressToken.balance
+      SELECT  address.id as address_id,
+              token.id as token_id,
+              addressToken.balance,
+              '${blockTime}'::timestamptz AS first_tx_time,
+              '${blockTime}'::timestamptz AS last_tx_time
       FROM (
         SELECT  unnest(ARRAY[${addresses}]) AS bech32,
                 unnest(ARRAY[${fingerprints}]) AS fingerprint,
@@ -161,8 +166,10 @@ function processBlock(
       ) as addressToken
       JOIN address ON address.bech32 = addressToken.bech32
       JOIN token ON token.fingerprint = addressToken.fingerprint
-      ON CONFLICT (${prefix}_id, token_id) DO UPDATE
-      SET balance = ${prefix}_token_state.balance + EXCLUDED.balance;
+      ON CONFLICT (address_id, token_id) DO UPDATE
+      SET balance = ${prefix}_token_state.balance + EXCLUDED.balance,
+          last_tx_time = EXCLUDED.last_tx_time
+      ;
     `;
 
     const deleted = `
@@ -175,7 +182,7 @@ function processBlock(
       )
       DELETE FROM scrolls.${prefix}_token_state
       USING address, token
-      WHERE ${prefix}_id = address.id
+      WHERE address_id = address.id
         AND token_id = token.id
         AND balance = 0;
     `;

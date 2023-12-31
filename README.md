@@ -12,4 +12,4 @@ deno run --allow-read --allow-net --allow-env --allow-run --allow-write  build.t
 - Cursor from db
 - Finalize
 - Implement dolos node
-- 
+- address to tx

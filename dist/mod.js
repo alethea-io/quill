@@ -4409,12 +4409,19 @@ function processTxOutput2(txOutput, addressType, action, addressState, addresses
   const address = C.Address.from_bytes(txOutput.address);
   let bech322;
   let raw;
+  let stake_address_id = null;
   switch (addressType) {
     case "payment":
       if (address.as_byron()) {
         bech322 = address.as_byron()?.to_base58();
       } else if (address.to_bech32(void 0)) {
         bech322 = address.to_bech32(void 0);
+        if (address.as_base()) {
+          const network_id = address.network_id();
+          const stake_cred = address.as_base()?.stake_cred();
+          const stake_address = C.RewardAddress.new(network_id, stake_cred).to_address();
+          stake_address_id = stake_address.to_bech32(void 0);
+        }
       } else {
         throw new Error(
           `address "${encodeHex(txOutput.address)}" could not be parsed!`
@@ -4458,6 +4465,7 @@ function processTxOutput2(txOutput, addressType, action, addressState, addresses
     addressState.set(bech322, {
       bech32: bech322,
       raw,
+      stake_address_id,
       balance: amount,
       tx_count: 0n,
       tx_count_as_source: 0n,
@@ -4528,6 +4536,7 @@ function processBlock2(blockJson, config, method) {
     const addressesRaw = values.map(
       (value) => `decode('${encodeHex(value.raw)}', 'hex')`
     ).join(",");
+    const stakeAddresses = values.map((value) => `'${value.stake_address_id}'`).join(",");
     const balances = values.map((value) => `${value.balance}`).join(",");
     const txCounts = values.map((value) => `${value.tx_count}`).join(",");
     const sourceCounts = values.map((value) => `${value.tx_count_as_source}`).join(",");
@@ -4537,9 +4546,23 @@ function processBlock2(blockJson, config, method) {
     const utxoCounts = values.map((value) => `${value.utxo_count}`).join(",");
     const table = addressType == "payment" /* Payment */ ? "address_state" : "stake_address_state";
     const inserted = `
+      ${addressType == "payment" /* Payment */ ? `
+      WITH stake_address AS (
+        SELECT 
+          address.bech32,
+          stake_address_state.id AS stake_address_id
+        FROM (
+          SELECT unnest(ARRAY[${addresses}]) AS bech32,
+                 unnest(ARRAY[${stakeAddresses}]) AS stake_bech32
+        ) as address
+        LEFT JOIN scrolls.stake_address_state 
+        ON stake_address_state.bech32 = stake_bech32
+      )
+      ` : ``}
       INSERT INTO scrolls.${table} (
         bech32,
         raw,
+        ${addressType == "payment" /* Payment */ ? `stake_address_id,` : ``}
         balance,
         utxo_count,
         tx_count,
@@ -4548,15 +4571,29 @@ function processBlock2(blockJson, config, method) {
         first_tx_time,
         last_tx_time
       )
-      SELECT  unnest(ARRAY[${addresses}]) AS bech32,
-              unnest(ARRAY[${addressesRaw}]) AS raw,
-              unnest(ARRAY[${balances}]) AS balance,
-              unnest(ARRAY[${utxoCounts}]) AS utxo_count,
-              unnest(ARRAY[${txCounts}]) AS tx_count,
-              unnest(ARRAY[${sourceCounts}]) AS tx_count_as_source,
-              unnest(ARRAY[${destCounts}]) AS tx_count_as_dest,
-              '${blockTime}'::timestamptz AS first_tx_time,
-              '${blockTime}'::timestamptz AS last_tx_time
+      SELECT 
+        bech32,
+        raw,
+        ${addressType == "payment" /* Payment */ ? `stake_address_id,` : ``}
+        balance,
+        utxo_count,
+        tx_count,
+        tx_count_as_source,
+        tx_count_as_dest,
+        '${blockTime}'::timestamptz AS first_tx_time,
+        '${blockTime}'::timestamptz AS last_tx_time
+      FROM (
+        SELECT  unnest(ARRAY[${addresses}]) AS bech32,
+                unnest(ARRAY[${addressesRaw}]) AS raw,
+                unnest(ARRAY[${balances}]) AS balance,
+                unnest(ARRAY[${utxoCounts}]) AS utxo_count,
+                unnest(ARRAY[${txCounts}]) AS tx_count,
+                unnest(ARRAY[${sourceCounts}]) AS tx_count_as_source,
+                unnest(ARRAY[${destCounts}]) AS tx_count_as_dest
+      )
+      ${addressType == "payment" /* Payment */ ? `
+      JOIN stake_address using(bech32)
+      ` : ``}
       ON CONFLICT (bech32) DO UPDATE
       SET balance = ${table}.balance + EXCLUDED.balance,
           utxo_count = ${table}.utxo_count + EXCLUDED.utxo_count,
@@ -4645,6 +4682,7 @@ function processTxOutput3(txOutput, addressType, action, addressTokenState) {
 }
 function processBlock3(blockJson, config, method) {
   const block = Block.fromJson(blockJson);
+  const blockTime = slotToTimestamp(Number(block.header?.slot));
   const addressType = toAddressType2(config.addressType);
   if (addressType === void 0) {
     throw new Error(`Invalid address type "${config.addressType}"`);
@@ -4680,13 +4718,17 @@ function processBlock3(blockJson, config, method) {
         SELECT id, fingerprint FROM scrolls.token_state WHERE fingerprint IN (${fingerprints})
       )
       INSERT INTO scrolls.${prefix}_token_state (
-        ${prefix}_id,
+        address_id,
         token_id,
-        balance
+        balance,
+        first_tx_time,
+        last_tx_time
       )
-      SELECT  address.id as ${prefix}_id
-          ,   token.id as token_id
-          ,   addressToken.balance
+      SELECT  address.id as address_id,
+              token.id as token_id,
+              addressToken.balance,
+              '${blockTime}'::timestamptz AS first_tx_time,
+              '${blockTime}'::timestamptz AS last_tx_time
       FROM (
         SELECT  unnest(ARRAY[${addresses}]) AS bech32,
                 unnest(ARRAY[${fingerprints}]) AS fingerprint,
@@ -4694,8 +4736,10 @@ function processBlock3(blockJson, config, method) {
       ) as addressToken
       JOIN address ON address.bech32 = addressToken.bech32
       JOIN token ON token.fingerprint = addressToken.fingerprint
-      ON CONFLICT (${prefix}_id, token_id) DO UPDATE
-      SET balance = ${prefix}_token_state.balance + EXCLUDED.balance;
+      ON CONFLICT (address_id, token_id) DO UPDATE
+      SET balance = ${prefix}_token_state.balance + EXCLUDED.balance,
+          last_tx_time = EXCLUDED.last_tx_time
+      ;
     `;
     const deleted = `
       WITH 
@@ -4707,7 +4751,7 @@ function processBlock3(blockJson, config, method) {
       )
       DELETE FROM scrolls.${prefix}_token_state
       USING address, token
-      WHERE ${prefix}_id = address.id
+      WHERE address_id = address.id
         AND token_id = token.id
         AND balance = 0;
     `;

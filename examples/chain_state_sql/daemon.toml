@@ -8,8 +8,8 @@ type = "mainnet"
 [intersect]
 type = "Point"
 value = [
-    104699772,
-    "19525913a14c4540a782d188c333f2c54d1845620aef56e3166a2c1fffb800fc"
+    4492900,
+    "b51b1605cc27b0be3a1ab07dfcc2ceb0b0da5e8ab5d0cb944c16366edba92e83"
 ]
 
 [enrich]
