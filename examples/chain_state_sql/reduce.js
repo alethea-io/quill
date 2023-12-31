@@ -4,13 +4,13 @@ const config = [
   {
     name: "AddressState",
     config: {
-      addressType: "payment",
+      addressType: "stake",
     }
   },
   {
     name: "AddressState",
     config: {
-      addressType: "stake",
+      addressType: "payment",
     }
   },
   {
