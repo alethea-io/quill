@@ -4220,14 +4220,30 @@ function blake2b(msg, inputEncoding, outputEncoding, bytes = BYTES_MAX, key, sal
 // src/lib/utils.ts
 var import_npm_bech32 = __toESM(require_dist());
 var BYRON_UNIX = 1506203091;
-var SHELLY_UNIX = 1596491091;
-var SHELLY_SLOT = 4924800;
+var BYRON_SLOT = 0;
+var BYRON_SLOT_LEN = 20;
+var SHELLEY_UNIX = 1596059091;
+var SHELLEY_SLOT = 4492800;
+var SHELLEY_SLOT_LEN = 1;
+function compute_linear_timestamp(known_slot, known_time, slot_length, query_slot) {
+  return known_time + (query_slot - known_slot) * slot_length;
+}
 function slotToTimestamp(slotNumber) {
   let unixTimestamp;
-  if (slotNumber <= SHELLY_SLOT) {
-    unixTimestamp = BYRON_UNIX + slotNumber * 20;
+  if (slotNumber < SHELLEY_SLOT) {
+    unixTimestamp = compute_linear_timestamp(
+      BYRON_SLOT,
+      BYRON_UNIX,
+      BYRON_SLOT_LEN,
+      slotNumber
+    );
   } else {
-    unixTimestamp = SHELLY_UNIX + (slotNumber - SHELLY_SLOT);
+    unixTimestamp = compute_linear_timestamp(
+      SHELLEY_SLOT,
+      SHELLEY_UNIX,
+      SHELLEY_SLOT_LEN,
+      slotNumber
+    );
   }
   const date = new Date(unixTimestamp * 1e3);
   return date.toISOString();

@@ -2,16 +2,38 @@ import { blake2b } from "https://deno.land/x/blake2b@v0.1.0/mod.ts";
 import { bech32 } from "npm:bech32";
 
 const BYRON_UNIX = 1506203091;
-const SHELLY_UNIX = 1596491091;
-const SHELLY_SLOT = 4924800;
+const BYRON_SLOT = 0;
+const BYRON_SLOT_LEN = 20;
+const SHELLEY_UNIX = 1596059091;
+const SHELLEY_SLOT = 4492800;
+const SHELLEY_SLOT_LEN = 1;
+
+function compute_linear_timestamp(
+  known_slot: number,
+  known_time: number,
+  slot_length: number,
+  query_slot: number,
+): number {
+  return known_time + (query_slot - known_slot) * slot_length;
+}
 
 export function slotToTimestamp(slotNumber: number): string {
   let unixTimestamp;
 
-  if (slotNumber <= SHELLY_SLOT) {
-    unixTimestamp = BYRON_UNIX + slotNumber * 20;
+  if (slotNumber < SHELLEY_SLOT) {
+    unixTimestamp = compute_linear_timestamp(
+      BYRON_SLOT,
+      BYRON_UNIX,
+      BYRON_SLOT_LEN,
+      slotNumber,
+    );
   } else {
-    unixTimestamp = SHELLY_UNIX + (slotNumber - SHELLY_SLOT);
+    unixTimestamp = compute_linear_timestamp(
+      SHELLEY_SLOT,
+      SHELLEY_UNIX,
+      SHELLEY_SLOT_LEN,
+      slotNumber,
+    );
   }
 
   const date = new Date(unixTimestamp * 1000);
