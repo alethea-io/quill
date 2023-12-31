@@ -148,13 +148,13 @@ function processBlock(
         SELECT id, fingerprint FROM scrolls.token_state WHERE fingerprint IN (${fingerprints})
       )
       INSERT INTO scrolls.${prefix}_token_state (
-        address_id,
+        ${prefix}_id,
         token_id,
         balance,
         first_tx_time,
         last_tx_time
       )
-      SELECT  address.id as address_id,
+      SELECT  address.id as ${prefix}_id,
               token.id as token_id,
               addressToken.balance,
               '${blockTime}'::timestamptz AS first_tx_time,
@@ -166,7 +166,7 @@ function processBlock(
       ) as addressToken
       JOIN address ON address.bech32 = addressToken.bech32
       JOIN token ON token.fingerprint = addressToken.fingerprint
-      ON CONFLICT (address_id, token_id) DO UPDATE
+      ON CONFLICT (${prefix}_id, token_id) DO UPDATE
       SET balance = ${prefix}_token_state.balance + EXCLUDED.balance,
           last_tx_time = EXCLUDED.last_tx_time
       ;
@@ -182,7 +182,7 @@ function processBlock(
       )
       DELETE FROM scrolls.${prefix}_token_state
       USING address, token
-      WHERE address_id = address.id
+      WHERE ${prefix}_id = address.id
         AND token_id = token.id
         AND balance = 0;
     `;
