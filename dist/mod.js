@@ -4814,7 +4814,7 @@ function processTxOutput4(txOutput, action, tokenState, addresses) {
   let bech322;
   if (address.as_byron()) {
     bech322 = address.as_byron()?.to_base58();
-  } else if (address.as_enterprise()) {
+  } else if (address.as_enterprise() || address.as_pointer()) {
     bech322 = address.to_bech32(void 0);
   } else if (address.as_base()) {
     const network_id = address.network_id();

@@ -64,7 +64,7 @@ function processTxOutput(
   if (address.as_byron()) {
     // @ts-ignore: checked if address.as_byron() is undefined
     bech32 = address.as_byron()?.to_base58();
-  } else if (address.as_enterprise()) {
+  } else if (address.as_enterprise() || address.as_pointer()) {
     bech32 = address.to_bech32(undefined);
   } else if (address.as_base()) {
     const network_id = address.network_id();
