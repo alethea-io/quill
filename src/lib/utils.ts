@@ -8,7 +8,7 @@ const SHELLEY_UNIX = 1596059091;
 const SHELLEY_SLOT = 4492800;
 const SHELLEY_SLOT_LEN = 1;
 
-function compute_linear_timestamp(
+function computeLinearTimestamp(
   known_slot: number,
   known_time: number,
   slot_length: number,
@@ -21,14 +21,14 @@ export function slotToTimestamp(slotNumber: number): string {
   let unixTimestamp;
 
   if (slotNumber < SHELLEY_SLOT) {
-    unixTimestamp = compute_linear_timestamp(
+    unixTimestamp = computeLinearTimestamp(
       BYRON_SLOT,
       BYRON_UNIX,
       BYRON_SLOT_LEN,
       slotNumber,
     );
   } else {
-    unixTimestamp = compute_linear_timestamp(
+    unixTimestamp = computeLinearTimestamp(
       SHELLEY_SLOT,
       SHELLEY_UNIX,
       SHELLEY_SLOT_LEN,
